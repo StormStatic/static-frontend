@@ -62,10 +62,6 @@ export default function Home() {
   const [error, setError] = useState<Error>();
   const [isLoading, setIsLoading] = useState(false);
 
-  // const handleAmountChange = (value: string) => {
-  //   setAmount(value);
-  // };
-
   const swapSatsToToken = async (ev: FormEvent) => {
     ev.preventDefault();
     setError(undefined);
@@ -161,12 +157,35 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center gap-4 p-10">
+    <div className="flex min-h-screen flex-col items-center gap-4 p-10 m-4">
       <div>
+        <div className="flex flex-col">
+          <p>Amount</p>
+          <input
+            className="mx-8 mb-4 border-2"
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          <p>Destination Address</p>
+          <input
+            className="mx-8 mb-4 border-2"
+            type="text"
+            value={destAddress}
+            onChange={(e) => setDestAddress(e.target.value)}
+          />
+        </div>
+
         <p>{"OrderId: " + orderId}</p>
+
         <p className="break-all">{"paymentHash: " + paymentHash}</p>
-        <p className="break-all">{"preimage: " + preimage}</p>
-        <p>{"destAddress: " + destAddress}</p>
+        <div className="border-2 p-4 border-red-400">
+          <p className="break-all">{"preimage: " + preimage}</p>
+          <p className="text-red-500">
+            Warning: Preimage is only stored here in memory, refreshing the page
+            will lose it
+          </p>
+        </div>
         <p>{"Amount: XSGD " + amount}</p>
         <p>{error?.message}</p>
       </div>
@@ -184,7 +203,9 @@ export default function Home() {
       ) : (
         <></>
       )}
-      {orderId ? (
+      {paymentHash.length < 1 ? (
+        <></>
+      ) : orderId ? (
         <></>
       ) : (
         <button
@@ -200,7 +221,14 @@ export default function Home() {
       {orderId ? (
         <div>
           <div>
-            {invoice ? <p className="break-all my-4">{invoice}</p> : <></>}
+            {invoice ? (
+              <>
+                <p className="font-bold">Invoice To Pay</p>
+                <p className="break-all mb-4">{invoice}</p>
+              </>
+            ) : (
+              <></>
+            )}
           </div>
           <div>
             {order ? (
@@ -209,7 +237,46 @@ export default function Home() {
                   <p>{"Status: " + order.status}</p>
                   <p>{order.metadata.failureReason}</p>
                 </div>
-                <p className="text-sm break-all my-4">
+                {order.metadata.escrowAddress ? (
+                  <>
+                    <div className="flex text-md">
+                      <p>{"Lock Contract: " + order.metadata.escrowAddress}</p>
+                      <a
+                        className="text-blue underline ml-4"
+                        href={`https://polygonscan.com/address/${order.metadata.escrowAddress}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        polygonscan
+                      </a>
+                    </div>
+                    <div className="flex text-md">
+                      <p>{"Deposit Txn: " + order.metadata.depositTx}</p>
+                      <a
+                        className="text-blue underline ml-4"
+                        href={`https://polygonscan.com/tx/${order.metadata.depositTx}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        polygonscan
+                      </a>
+                    </div>
+                    <div className="flex text-md">
+                      <p>{"Release Txn: " + order.metadata.transactionHash}</p>
+                      <a
+                        className="text-blue underline ml-4"
+                        href={`https://polygonscan.com/tx/${order.metadata.transactionHash}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        polygonscan
+                      </a>
+                    </div>
+                  </>
+                ) : (
+                  <></>
+                )}
+                <p className="text-xs break-all my-4">
                   {JSON.stringify(order)}
                 </p>
               </>
