@@ -58,12 +58,27 @@ export default function Order({ orderId, preimage }: any) {
     }
   }, [data, orderId, preimage]);
 
+  const mapStatus = (status: any) => {
+    switch (status) {
+      case "Paid":
+        return "Lightning Funds Escrowed, Creating Escrow on Polygon..";
+      case "DeployedContract":
+        return "Outgoing Polygon XSGD Locked in Escrow";
+      case "ReceivedPreimage":
+        return "Received Preimage from Frontend, Claiming Lightning funds... Releasing Polygon Funds...";
+      case "ReleasedFund":
+        return "Funds sent to destination address";
+      default:
+        return status;
+    }
+  };
+
   return (
     <>
       {loading ? <p>Loading...</p> : <></>}
       {error ? <p>{"Error:" + error.message}</p> : <></>}
       {data?.sellOrder.status ? (
-        <p className="m-4 break-all">{data?.sellOrder.status}</p>
+        <p className="m-4 break-all">{mapStatus(data?.sellOrder.status)}</p>
       ) : (
         <></>
       )}
@@ -75,16 +90,16 @@ export default function Order({ orderId, preimage }: any) {
             value={data?.sellOrder?.metadata.invoice}
             onClick={() => writeToClipboard(data?.sellOrder?.metadata.invoice)}
           />
-          <p className="m-4 break-all">{data?.sellOrder?.metadata.invoice}</p>
+          <p className="mx-4 break-all">{data?.sellOrder?.metadata.invoice}</p>
         </div>
       ) : (
         <></>
       )}
-      {data ? (
+      {/* {data ? (
         <p className="m-4 text-xs break-all">{JSON.stringify(data)}</p>
       ) : (
         <></>
-      )}
+      )} */}
     </>
   );
 }

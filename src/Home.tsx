@@ -35,10 +35,10 @@ export default function Home() {
   const HOST = "https://dev-static-api.ap.ngrok.io";
   // const HOST = "http://localhost:8911";
   const STATIC_GRAPHQL_URI = `${HOST}/graphql`;
-  const DEST_ADDRESS_TESTER = "0x95383D2BEFF0Df0A6DC2c8957F0066Ad8172BE53"; // Set this
+
   const AMOUNT_READABLE = "0.01"; // Set this
 
-  const [destAddress, setDestAddress] = useState(DEST_ADDRESS_TESTER);
+  const [destAddress, setDestAddress] = useState("");
   const [paymentHash, setPaymentHash] = useState<string>("");
   const [preimage, setPreimage] = useState<string>("");
   const [amount, setAmount] = useState(AMOUNT_READABLE);
@@ -132,17 +132,16 @@ export default function Home() {
           />
         </div>
 
-        <p>{"OrderId: " + orderId}</p>
-
-        <p className="break-all">{"paymentHash: " + paymentHash}</p>
+        {/* <p>{"OrderId: " + orderId}</p> */}
+        {/* <p className="break-all">{"paymentHash: " + paymentHash}</p>
         <div className="border-2 p-4 border-red-400">
           <p className="break-all">{"preimage: " + preimage}</p>
           <p className="text-red-500">
             Warning: Preimage is only stored here in memory, refreshing the page
             will lose it
           </p>
-        </div>
-        <p>{"Amount: XSGD " + amount}</p>
+        </div> */}
+        {/* <p>{"Amount: XSGD " + amount}</p> */}
         <p>{error?.message}</p>
       </div>
       {paymentHash.length < 1 ? (
