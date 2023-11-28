@@ -7,8 +7,6 @@ import { Wallet, getBytesCopy, hexlify, sha256 } from "ethers";
 
 import Decimal from "decimal.js";
 
-// import { randomBytes } from "crypto";
-
 const CREATE_SELL_ORDER = gql`
   mutation CreateSellOrder(
     $destAddress: String!
@@ -47,8 +45,10 @@ const GET_SELL_ORDER = gql`
 `;
 
 export default function Home() {
-  const STATIC_GRAPHQL_URI = "https://dev-static-api.ap.ngrok.io/graphql";
-  const STATIC_PREIMAGE_URI = "https://dev-static-api.ap.ngrok.io/preimage";
+  const HOST = "https://dev-static-api.ap.ngrok.io";
+  // const HOST = "http://localhost:8911";
+  const STATIC_GRAPHQL_URI = `${HOST}/graphql`;
+  const STATIC_PREIMAGE_URI = `${HOST}/preimage`;
   const DEST_ADDRESS_TESTER = "0x95383D2BEFF0Df0A6DC2c8957F0066Ad8172BE53"; // Set this
   const AMOUNT_READABLE = "0.01"; // Set this
 
@@ -60,6 +60,7 @@ export default function Home() {
   const [invoice, setInvoice] = useState(null);
   const [order, setOrder] = useState<any>(null);
   const [error, setError] = useState<Error>();
+  const [isPolling, setIsPolling] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const swapSatsToToken = async (ev: FormEvent) => {
@@ -133,6 +134,7 @@ export default function Home() {
     const result = await c.query({
       query: GET_SELL_ORDER,
       variables: { id: orderId },
+      pollInterval: 5000, // query once every 5sec
     });
 
     setOrder(result.data.sellOrder);
@@ -284,14 +286,19 @@ export default function Home() {
               <></>
             )}
           </div>
-          <button
-            className="border-2 p-4 border-gray-800 rounded-full"
-            onClick={() => {
-              queryOrder();
-            }}
-          >
-            Tap Me to refresh queryOrder
-          </button>
+          {!isPolling ? (
+            <button
+              className="border-2 p-4 border-gray-800 rounded-full"
+              onClick={() => {
+                setIsPolling(true);
+                queryOrder();
+              }}
+            >
+              Tap Me to Start Polling
+            </button>
+          ) : (
+            <></>
+          )}
         </div>
       ) : (
         <></>
