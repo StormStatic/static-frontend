@@ -131,19 +131,19 @@ export default function Home() {
       uri: STATIC_GRAPHQL_URI,
       cache: new InMemoryCache(),
     });
-    const result = await c.query({
+    const { loading, error, data } = await c.query({
       query: GET_SELL_ORDER,
       variables: { id: orderId },
       pollInterval: 5000, // query once every 5sec
     });
 
-    setOrder(result.data.sellOrder);
+    setOrder(data.sellOrder);
 
-    if (result.data.sellOrder.metadata.invoice) {
-      setInvoice(result.data.sellOrder.metadata.invoice);
+    if (data.sellOrder.metadata.invoice) {
+      setInvoice(data.sellOrder.metadata.invoice);
     }
 
-    if (result.data.sellOrder.status === "DeployedContract") {
+    if (data.sellOrder.status === "DeployedContract") {
       const url =
         "https://corsproxy.io/?" + encodeURIComponent(STATIC_PREIMAGE_URI);
       const result = await fetch(url, {
