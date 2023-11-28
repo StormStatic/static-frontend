@@ -60,14 +60,18 @@ export default function Order({ orderId, preimage }: any) {
 
   const mapStatus = (status: any) => {
     switch (status) {
+      case "Created":
+        return "Order Created";
+      case "AwaitingPayment":
+        return "Waiting for Lightning Payment into Escrow...";
       case "Paid":
         return "Lightning Funds Escrowed, Creating Escrow on Polygon..";
       case "DeployedContract":
-        return "Outgoing Polygon XSGD Locked in Escrow";
+        return "Escrow Created. Outgoing Polygon XSGD Locked in Escrow";
       case "ReceivedPreimage":
-        return "Received Preimage from Frontend, Claiming Lightning funds... Releasing Polygon Funds...";
+        return "Received Preimage from Frontend. Claimed Lightning funds. Releasing Polygon XSGD Funds...";
       case "ReleasedFund":
-        return "Funds sent to destination address";
+        return "XSGD successfully sent to destination address!";
       default:
         return status;
     }
@@ -78,7 +82,9 @@ export default function Order({ orderId, preimage }: any) {
       {loading ? <p>Loading...</p> : <></>}
       {error ? <p>{"Error:" + error.message}</p> : <></>}
       {data?.sellOrder.status ? (
-        <p className="m-4 break-all">{mapStatus(data?.sellOrder.status)}</p>
+        <p className="m-4 break-all border-2 p-4 rounded-3xl bg-slate-600 text-slate-200 shadow-lg">
+          {mapStatus(data?.sellOrder.status)}
+        </p>
       ) : (
         <></>
       )}
@@ -90,7 +96,9 @@ export default function Order({ orderId, preimage }: any) {
             value={data?.sellOrder?.metadata.invoice}
             onClick={() => writeToClipboard(data?.sellOrder?.metadata.invoice)}
           />
-          <p className="mx-4 break-all">{data?.sellOrder?.metadata.invoice}</p>
+          <p className="w-96 mx-4 break-all">
+            {data?.sellOrder?.metadata.invoice}
+          </p>
         </div>
       ) : (
         <></>

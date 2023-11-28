@@ -115,20 +115,25 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col items-center gap-4 p-10 m-4">
       <div>
-        <div className="flex flex-col">
-          <p>Amount</p>
+        <div className="flex flex-col items-center">
+          <p className="font-bold text-2xl mx-8 my-4 mb-12">
+            Swap BTC (Lightning) to XSGD (Polygon)
+          </p>
+          <p>XSGD Amount</p>
           <input
             className="mx-8 mb-4 border-2"
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
-          <p>Destination Address</p>
+          <p>Destination Address (on Polygon)</p>
           <input
             className="mx-8 mb-4 border-2"
             type="text"
             value={destAddress}
-            onChange={(e) => setDestAddress(e.target.value)}
+            onChange={(e) => {
+              setDestAddress(e.target.value);
+            }}
           />
         </div>
 
@@ -150,12 +155,12 @@ export default function Home() {
         <></>
       ) : (
         <button
-          className="border-2 p-4 border-gray-800 rounded-full"
+          className="border-2 p-4 border-gray-800 rounded-full active:border-blue-400"
           onClick={() => {
-            createSellOrder();
+            if (destAddress.length > 1) createSellOrder();
           }}
         >
-          Create Sell Order
+          Create Order
         </button>
       )}
       {orderId.length > 1 ? (
