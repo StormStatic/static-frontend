@@ -1,11 +1,12 @@
 "use client"; // This is a client component
 
 import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
-import { FormEvent, useState } from "react";
-import { RequestInvoiceResponse, requestProvider } from "webln";
-import { Wallet, getBytesCopy, hexlify, sha256 } from "ethers";
+import { FormEvent, useEffect, useState } from "react";
+import { Wallet, getBytesCopy, sha256 } from "ethers";
 
 import Decimal from "decimal.js";
+import Order from "./Order";
+import { requestProvider } from "webln";
 
 const CREATE_SELL_ORDER = gql`
   mutation CreateSellOrder(
@@ -30,25 +31,10 @@ const CREATE_SELL_ORDER = gql`
   }
 `;
 
-const GET_SELL_ORDER = gql`
-  query GetSellOrder($id: String!) {
-    sellOrder(id: $id) {
-      id
-      status
-      paymentHash
-      tokenAddress
-      tokenAmount
-      destAddress
-      metadata
-    }
-  }
-`;
-
 export default function Home() {
   const HOST = "https://dev-static-api.ap.ngrok.io";
   // const HOST = "http://localhost:8911";
   const STATIC_GRAPHQL_URI = `${HOST}/graphql`;
-  const STATIC_PREIMAGE_URI = `${HOST}/preimage`;
   const DEST_ADDRESS_TESTER = "0x95383D2BEFF0Df0A6DC2c8957F0066Ad8172BE53"; // Set this
   const AMOUNT_READABLE = "0.01"; // Set this
 
@@ -56,11 +42,8 @@ export default function Home() {
   const [paymentHash, setPaymentHash] = useState<string>("");
   const [preimage, setPreimage] = useState<string>("");
   const [amount, setAmount] = useState(AMOUNT_READABLE);
-  const [orderId, setOrderId] = useState(null);
-  const [invoice, setInvoice] = useState(null);
-  const [order, setOrder] = useState<any>(null);
+  const [orderId, setOrderId] = useState<string>("");
   const [error, setError] = useState<Error>();
-  const [isPolling, setIsPolling] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const swapSatsToToken = async (ev: FormEvent) => {
@@ -100,6 +83,10 @@ export default function Home() {
     }
   };
 
+  useEffect(() => {
+    generateHash();
+  }, []);
+
   const generateHash = async () => {
     const pre = Wallet.createRandom().privateKey;
     const hash = sha256(getBytesCopy(pre));
@@ -120,42 +107,9 @@ export default function Home() {
         tokenAmount: parseFloat(amount) * 1000000,
       },
     });
-    console.log(result);
     setOrderId(result.data.CreateSellOrder.id);
-    setOrder(result.data.CreateSellOrder);
+
     return result;
-  };
-
-  const queryOrder = async () => {
-    const c = new ApolloClient({
-      uri: STATIC_GRAPHQL_URI,
-      cache: new InMemoryCache(),
-    });
-    const { loading, error, data } = await c.query({
-      query: GET_SELL_ORDER,
-      variables: { id: orderId },
-      pollInterval: 5000, // query once every 5sec
-    });
-    console.log("data", data);
-    setOrder(data.sellOrder);
-
-    if (data.sellOrder.metadata.invoice) {
-      setInvoice(data.sellOrder.metadata.invoice);
-    }
-
-    if (data.sellOrder.status === "DeployedContract") {
-      const url =
-        "https://corsproxy.io/?" + encodeURIComponent(STATIC_PREIMAGE_URI);
-      const result = await fetch(url, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ data: { wid: orderId, preimage: preimage } }),
-      });
-      console.log(result);
-    }
   };
 
   return (
@@ -192,20 +146,6 @@ export default function Home() {
         <p>{error?.message}</p>
       </div>
       {paymentHash.length < 1 ? (
-        <>
-          <button
-            className="border-2 p-4 border-gray-800 rounded-full"
-            onClick={() => {
-              generateHash();
-            }}
-          >
-            Tap Me to generatePaymentHash
-          </button>
-        </>
-      ) : (
-        <></>
-      )}
-      {paymentHash.length < 1 ? (
         <></>
       ) : orderId ? (
         <></>
@@ -216,9 +156,19 @@ export default function Home() {
             createSellOrder();
           }}
         >
-          Tap Me to createSellOrder
+          Create Sell Order
         </button>
       )}
+      {orderId.length > 1 ? (
+        <Order orderId={orderId} preimage={preimage}></Order>
+      ) : (
+        <></>
+      )}
+    </div>
+  );
+}
+/**
+ * 
 
       {orderId ? (
         <div>
@@ -286,23 +236,8 @@ export default function Home() {
               <></>
             )}
           </div>
-          {!isPolling ? (
-            <button
-              className="border-2 p-4 border-gray-800 rounded-full"
-              onClick={() => {
-                setIsPolling(true);
-                queryOrder();
-              }}
-            >
-              Tap Me to Start Polling
-            </button>
-          ) : (
-            <></>
-          )}
         </div>
       ) : (
         <></>
       )}
-    </div>
-  );
-}
+ */

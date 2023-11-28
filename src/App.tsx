@@ -1,10 +1,22 @@
+import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
+import toast, { Toaster } from "react-hot-toast";
+
 import Home from "./Home";
-import React from "react";
+
+const HOST = "https://dev-static-api.ap.ngrok.io";
+const STATIC_GRAPHQL_URI = `${HOST}/graphql`;
+const c = new ApolloClient({
+  uri: STATIC_GRAPHQL_URI,
+  cache: new InMemoryCache(),
+});
 
 function App() {
   return (
     <div className="App">
-      <Home></Home>
+      <ApolloProvider client={c}>
+        <Toaster />
+        <Home />
+      </ApolloProvider>
     </div>
   );
 }
