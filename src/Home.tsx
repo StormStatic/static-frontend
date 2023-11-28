@@ -136,7 +136,7 @@ export default function Home() {
       variables: { id: orderId },
       pollInterval: 5000, // query once every 5sec
     });
-
+    console.log("data", data);
     setOrder(data.sellOrder);
 
     if (data.sellOrder.metadata.invoice) {
