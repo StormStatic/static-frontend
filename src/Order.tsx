@@ -26,6 +26,7 @@ export default function Order({ orderId, preimage }: any) {
   const { loading, error, data } = useQuery(GET_SELL_ORDER, {
     variables: { id: orderId },
     pollInterval: 2000, // query once every 2sec
+    onCompleted: () => {},
   });
   const writeToClipboard = async (d: any) => {
     await Clipboard.write({
@@ -65,7 +66,7 @@ export default function Order({ orderId, preimage }: any) {
       case "AwaitingPayment":
         return "Waiting for Lightning Payment into Escrow...";
       case "Paid":
-        return "Lightning Funds Escrowed, Creating Escrow on Polygon..";
+        return "Lightning Funds Escrowed, Escrowing XSGD on Polygon..";
       case "DeployedContract":
         return "Escrow Created. Outgoing Polygon XSGD Locked in Escrow";
       case "ReceivedPreimage":
@@ -82,13 +83,14 @@ export default function Order({ orderId, preimage }: any) {
       {loading ? <p>Loading...</p> : <></>}
       {error ? <p>{"Error:" + error.message}</p> : <></>}
       {data?.sellOrder.status ? (
-        <p className="m-4 break-all border-2 p-4 rounded-3xl bg-slate-600 text-slate-200 shadow-lg">
+        <p className="m-4 border-2 p-4 rounded-3xl bg-slate-600 text-slate-200 shadow-lg break-normal">
           {mapStatus(data?.sellOrder.status)}
         </p>
       ) : (
         <></>
       )}
-      {data?.sellOrder?.metadata.invoice ? (
+      {data?.sellOrder?.metadata.invoice &&
+      data?.sellOrder?.status === "AwaitingPayment" ? (
         <div className="flex flex-col justify-center items-center">
           <QRCodeSVG
             size={250}
@@ -103,11 +105,43 @@ export default function Order({ orderId, preimage }: any) {
       ) : (
         <></>
       )}
-      {/* {data ? (
-        <p className="m-4 text-xs break-all">{JSON.stringify(data)}</p>
+      {data?.sellOrder ? (
+        <>
+          <div className="text-xl break-all w-96">
+            <p>{data?.sellOrder.metadata.failureReason}</p>
+          </div>
+          {data?.sellOrder.metadata.depositTx ? (
+            <>
+              <div className="flex text-md">
+                <p>{"Deposit Txn: "}</p>
+                <a
+                  className="text-blue underline ml-4"
+                  href={`https://polygonscan.com/tx/${data?.sellOrder.metadata.depositTx}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  polygonscan
+                </a>
+              </div>
+              <div className="flex text-md">
+                <p>{"Release Txn: "}</p>
+                <a
+                  className="text-blue underline ml-4"
+                  href={`https://polygonscan.com/tx/${data?.sellOrder.metadata.transactionHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  polygonscan
+                </a>
+              </div>
+            </>
+          ) : (
+            <></>
+          )}
+        </>
       ) : (
         <></>
-      )} */}
+      )}
     </>
   );
 }

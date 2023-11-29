@@ -186,60 +186,7 @@ export default function Home() {
               <></>
             )}
           </div>
-          <div>
-            {order ? (
-              <>
-                <div className="text-xl break-all my-4">
-                  <p>{"Status: " + order.status}</p>
-                  <p>{order.metadata.failureReason}</p>
-                </div>
-                {order.metadata.escrowAddress ? (
-                  <>
-                    <div className="flex text-md">
-                      <p>{"Lock Contract: " + order.metadata.escrowAddress}</p>
-                      <a
-                        className="text-blue underline ml-4"
-                        href={`https://polygonscan.com/address/${order.metadata.escrowAddress}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        polygonscan
-                      </a>
-                    </div>
-                    <div className="flex text-md">
-                      <p>{"Deposit Txn: " + order.metadata.depositTx}</p>
-                      <a
-                        className="text-blue underline ml-4"
-                        href={`https://polygonscan.com/tx/${order.metadata.depositTx}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        polygonscan
-                      </a>
-                    </div>
-                    <div className="flex text-md">
-                      <p>{"Release Txn: " + order.metadata.transactionHash}</p>
-                      <a
-                        className="text-blue underline ml-4"
-                        href={`https://polygonscan.com/tx/${order.metadata.transactionHash}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        polygonscan
-                      </a>
-                    </div>
-                  </>
-                ) : (
-                  <></>
-                )}
-                <p className="text-xs break-all my-4">
-                  {JSON.stringify(order)}
-                </p>
-              </>
-            ) : (
-              <></>
-            )}
-          </div>
+          
         </div>
       ) : (
         <></>
