@@ -4,6 +4,7 @@ import { Clipboard } from "@capacitor/clipboard";
 import { QRCodeSVG } from "qrcode.react";
 import toast from "react-hot-toast";
 import { useEffect } from "react";
+import Loading from "./Loading";
 
 const GET_SELL_ORDER = gql`
   query GetSellOrder($id: String!) {
@@ -80,7 +81,7 @@ export default function Order({ orderId, preimage }: any) {
 
   return (
     <>
-      {loading ? <p>Loading...</p> : <></>}
+      {loading ? <Loading /> : <></>}
       {error ? <p>{"Error:" + error.message}</p> : <></>}
       {data?.sellOrder.status ? (
         <p className="m-4 border-2 p-4 rounded-3xl bg-slate-600 text-slate-200 shadow-lg break-normal">

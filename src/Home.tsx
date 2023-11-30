@@ -1,13 +1,14 @@
 "use client"; // This is a client component
 
-import { ApolloClient, InMemoryCache, gql } from "@apollo/client";
-import { FormEvent, useEffect, useState } from "react";
+import { gql, useMutation } from "@apollo/client";
+import { useState } from "react";
 import { Wallet, getBytesCopy, sha256 } from "ethers";
 
 import Decimal from "decimal.js";
 import Order from "./Order";
 import { requestProvider } from "webln";
 import { useWeb3ModalAccount } from "@web3modal/ethers/react";
+import Loading from "./Loading";
 
 const CREATE_SELL_ORDER = gql`
   mutation CreateSellOrder(
@@ -33,89 +34,21 @@ const CREATE_SELL_ORDER = gql`
 `;
 
 export default function Home() {
-  const HOST = "https://dev-static-api.ap.ngrok.io";
-  // const HOST = "http://localhost:8911";
-  const STATIC_GRAPHQL_URI = `${HOST}/graphql`;
-
   const AMOUNT_READABLE = "0.01"; // Set this
 
   const [destAddress, setDestAddress] = useState("");
-  const [paymentHash, setPaymentHash] = useState<string>("");
-  const [preimage, setPreimage] = useState<string>("");
+  const [preimage, setPreimage] = useState<Uint8Array>(
+    getBytesCopy(Wallet.createRandom().privateKey)
+  );
+  const [paymentHash, setPaymentHash] = useState<string>(sha256(preimage));
   const [amount, setAmount] = useState(AMOUNT_READABLE);
-  const [orderId, setOrderId] = useState<string>("");
-  const [error, setError] = useState<Error>();
-  const [isLoading, setIsLoading] = useState(false);
-  const { address } = useWeb3ModalAccount();
+  const [createSellOrder, { data, loading, error }] =
+    useMutation(CREATE_SELL_ORDER);
 
-  const swapSatsToToken = async (ev: FormEvent) => {
-    ev.preventDefault();
-    setError(undefined);
-
-    const amountInDecimal = new Decimal(amount);
-    if (amountInDecimal.lessThanOrEqualTo(0)) {
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Users must support webln
-      const webln = await requestProvider();
-
-      // Get users to sign a preimage. This is not the preimage after users have paid
-      // const hexPreimage = hexlify(randomBytes(32));
-      // const sig = await webln.signMessage(hexPreimage);
-
-      // const paymentHash = sig.signature;
-      // setPaymentHash(paymentHash);
-
-      // const paymentRequest = await _createSellTokenOrder(
-      //   destAddress,
-      //   paymentHash,
-      //   amount
-      // );
-
-      // const sendPaymentResponse = await webln.sendPayment(paymentRequest);
-
-      // const isSuccess = await _sendPreimageToSwap(sendPaymentResponse.preimage);
-    } catch (error) {
-      setError(error as Error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    generateHash();
-  }, []);
-
-  useEffect(() => {
-    setDestAddress(address as string);
-  }, [address]);
-  const generateHash = async () => {
-    const pre = Wallet.createRandom().privateKey;
-    const hash = sha256(getBytesCopy(pre));
-    setPreimage(pre);
-    setPaymentHash(hash);
-  };
-
-  const createSellOrder = async () => {
-    const c = new ApolloClient({
-      uri: STATIC_GRAPHQL_URI,
-      cache: new InMemoryCache(),
-    });
-    const result = await c.mutate({
-      mutation: CREATE_SELL_ORDER,
-      variables: {
-        destAddress,
-        paymentHash,
-        tokenAmount: parseFloat(amount) * 1000000,
-      },
-    });
-    setOrderId(result.data.CreateSellOrder.id);
-
-    return result;
-  };
+  console.log("preimage: " + preimage);
+  console.log("paymentHash " + paymentHash);
+  const orderId = data === undefined ? "" : data.CreateSellOrder.id;
+  console.log("orderId: " + orderId);
 
   return (
     <>
@@ -130,33 +63,46 @@ export default function Home() {
             </p>
             <p>XSGD Amount</p>
             <input
-              className="mb-4 border-2"
+              className="mx-8 mb-4 border-2"
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
             <p>Destination Address (on Polygon)</p>
-            <textarea
-              className="indent-2 m-2 mb-4 border-2"
-              rows={2}
-              cols={45}
+            <input
+              className="indent-2 mx-8 mb-4 border-2"
+              type="text"
               value={destAddress}
               onChange={(e) => {
                 setDestAddress(e.target.value);
               }}
             />
           </div>
-          <p>{error?.message}</p>
         </div>
         {paymentHash.length < 1 ? (
           <></>
         ) : orderId ? (
           <></>
+        ) : loading ? (
+          <Loading />
         ) : (
           <button
             className="border-2 p-4 border-gray-800 rounded-full active:border-blue-400"
             onClick={() => {
-              if (destAddress.length > 1) createSellOrder();
+              const amountInDecimal = new Decimal(amount);
+              const minAmountInDecimal = new Decimal(AMOUNT_READABLE);
+              if (
+                destAddress.length > 1 &&
+                !amountInDecimal.lessThan(minAmountInDecimal)
+              ) {
+                createSellOrder({
+                  variables: {
+                    destAddress,
+                    paymentHash,
+                    tokenAmount: parseFloat(amount) * 1000000,
+                  },
+                });
+              }
             }}
           >
             Create Order
