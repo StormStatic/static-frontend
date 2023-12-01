@@ -7,6 +7,7 @@ import { Wallet, getBytesCopy, sha256 } from "ethers";
 import Decimal from "decimal.js";
 import Order from "./Order";
 import { requestProvider } from "webln";
+import { useWeb3ModalAccount } from "@web3modal/ethers/react";
 
 const CREATE_SELL_ORDER = gql`
   mutation CreateSellOrder(
@@ -45,6 +46,7 @@ export default function Home() {
   const [orderId, setOrderId] = useState<string>("");
   const [error, setError] = useState<Error>();
   const [isLoading, setIsLoading] = useState(false);
+  const { address } = useWeb3ModalAccount();
 
   const swapSatsToToken = async (ev: FormEvent) => {
     ev.preventDefault();
@@ -87,6 +89,9 @@ export default function Home() {
     generateHash();
   }, []);
 
+  useEffect(() => {
+    setDestAddress(address as string);
+  }, [address]);
   const generateHash = async () => {
     const pre = Wallet.createRandom().privateKey;
     const hash = sha256(getBytesCopy(pre));
@@ -113,82 +118,56 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center gap-4 p-10 m-4">
-      <div>
-        <div className="flex flex-col items-center">
-          <p className="font-bold text-2xl mx-8 my-4 mb-12">
-            Swap BTC (Lightning) to XSGD (Polygon)
-          </p>
-          <p>XSGD Amount</p>
-          <input
-            className="mx-8 mb-4 border-2"
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-          <p>Destination Address (on Polygon)</p>
-          <input
-            className="mx-8 mb-4 border-2"
-            type="text"
-            value={destAddress}
-            onChange={(e) => {
-              setDestAddress(e.target.value);
-            }}
-          />
-        </div>
-
-        {/* <p>{"OrderId: " + orderId}</p> */}
-        {/* <p className="break-all">{"paymentHash: " + paymentHash}</p>
-        <div className="border-2 p-4 border-red-400">
-          <p className="break-all">{"preimage: " + preimage}</p>
-          <p className="text-red-500">
-            Warning: Preimage is only stored here in memory, refreshing the page
-            will lose it
-          </p>
-        </div> */}
-        {/* <p>{"Amount: XSGD " + amount}</p> */}
-        <p>{error?.message}</p>
+    <>
+      <div className="m-4 flex justify-end">
+        <w3m-button />
       </div>
-      {paymentHash.length < 1 ? (
-        <></>
-      ) : orderId ? (
-        <></>
-      ) : (
-        <button
-          className="border-2 p-4 border-gray-800 rounded-full active:border-blue-400"
-          onClick={() => {
-            if (destAddress.length > 1) createSellOrder();
-          }}
-        >
-          Create Order
-        </button>
-      )}
-      {orderId.length > 1 ? (
-        <Order orderId={orderId} preimage={preimage}></Order>
-      ) : (
-        <></>
-      )}
-    </div>
+      <div className="flex min-h-screen flex-col items-center gap-4 p-10 m-4">
+        <div>
+          <div className="flex flex-col items-center">
+            <p className="font-bold text-2xl mx-8 my-4 mb-12">
+              Swap BTC (Lightning) to XSGD (Polygon)
+            </p>
+            <p>XSGD Amount</p>
+            <input
+              className="mb-4 border-2"
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            <p>Destination Address (on Polygon)</p>
+            <textarea
+              className="indent-2 m-2 mb-4 border-2"
+              rows={2}
+              cols={45}
+              value={destAddress}
+              onChange={(e) => {
+                setDestAddress(e.target.value);
+              }}
+            />
+          </div>
+          <p>{error?.message}</p>
+        </div>
+        {paymentHash.length < 1 ? (
+          <></>
+        ) : orderId ? (
+          <></>
+        ) : (
+          <button
+            className="border-2 p-4 border-gray-800 rounded-full active:border-blue-400"
+            onClick={() => {
+              if (destAddress.length > 1) createSellOrder();
+            }}
+          >
+            Create Order
+          </button>
+        )}
+        {orderId.length > 1 ? (
+          <Order orderId={orderId} preimage={preimage}></Order>
+        ) : (
+          <></>
+        )}
+      </div>
+    </>
   );
 }
-/**
- * 
-
-      {orderId ? (
-        <div>
-          <div>
-            {invoice ? (
-              <>
-                <p className="font-bold">Invoice To Pay</p>
-                <p className="break-all mb-4">{invoice}</p>
-              </>
-            ) : (
-              <></>
-            )}
-          </div>
-          
-        </div>
-      ) : (
-        <></>
-      )}
- */
