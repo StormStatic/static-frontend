@@ -7,7 +7,6 @@ import { Wallet, getBytesCopy, sha256 } from "ethers";
 import Decimal from "decimal.js";
 import Order from "./Order";
 import { requestProvider } from "webln";
-import { useWeb3ModalAccount } from "@web3modal/ethers/react";
 import Loading from "./Loading";
 
 const CREATE_SELL_ORDER = gql`
