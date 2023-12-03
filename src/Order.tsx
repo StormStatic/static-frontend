@@ -4,6 +4,7 @@ import { Clipboard } from "@capacitor/clipboard";
 import { QRCodeSVG } from "qrcode.react";
 import toast from "react-hot-toast";
 import { useEffect } from "react";
+import Loading from "./Loading";
 
 const GET_SELL_ORDER = gql`
   query GetSellOrder($id: String!) {
@@ -21,18 +22,21 @@ const GET_SELL_ORDER = gql`
 
 const HOST = "https://dev-static-api.ap.ngrok.io";
 const STATIC_PREIMAGE_URI = `${HOST}/preimage`;
-
+const TWO_SEC_MS = 2000;
 export default function Order({ orderId, preimage }: any) {
-  const { loading, error, data } = useQuery(GET_SELL_ORDER, {
+  const { loading, error, data, stopPolling } = useQuery(GET_SELL_ORDER, {
     variables: { id: orderId },
-    pollInterval: 2000, // query once every 2sec
+    pollInterval: TWO_SEC_MS,
     onCompleted: () => {},
   });
+
+  console.log("start getSellOrder polling");
+
   const writeToClipboard = async (d: any) => {
     await Clipboard.write({
       string: d,
     });
-    toast.success("Copied!", { duration: 2000 });
+    toast.success("Copied!", { duration: TWO_SEC_MS });
   };
 
   useEffect(() => {
@@ -49,15 +53,26 @@ export default function Order({ orderId, preimage }: any) {
           data: { wid: orderId, preimage: preimage },
         }),
       });
-      console.log(result);
+      console.log("sendPreimage: " + result);
     };
 
-    console.log(data);
-    if (data == null) return;
-    if (data.sellOrder.status === "DeployedContract") {
-      sendPreimage();
+    if (data === null || data === undefined) return;
+
+    console.log("getSellOrder: " + data.sellOrder.status);
+
+    switch (data.sellOrder.status) {
+      case "DeployedContract":
+        sendPreimage();
+        return;
+      case "ReleasedFund":
+      case "Expired":
+        console.log("stop polling");
+        stopPolling();
+        return;
+      default:
+        return;
     }
-  }, [data, orderId, preimage]);
+  }, [data, stopPolling, orderId, preimage]);
 
   const mapStatus = (status: any) => {
     switch (status) {
@@ -80,7 +95,7 @@ export default function Order({ orderId, preimage }: any) {
 
   return (
     <>
-      {loading ? <p>Loading...</p> : <></>}
+      {loading ? <Loading /> : <></>}
       {error ? <p>{"Error:" + error.message}</p> : <></>}
       {data?.sellOrder.status ? (
         <p className="m-4 border-2 p-4 rounded-3xl bg-slate-600 text-slate-200 shadow-lg break-normal">

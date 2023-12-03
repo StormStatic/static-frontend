@@ -31,6 +31,7 @@ createWeb3Modal({
 });
 
 const HOST = "https://dev-static-api.ap.ngrok.io";
+// const HOST = "http://localhost:8911";
 const STATIC_GRAPHQL_URI = `${HOST}/graphql`;
 const c = new ApolloClient({
   uri: STATIC_GRAPHQL_URI,
