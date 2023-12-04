@@ -1,9 +1,6 @@
-"use client"; // This is a client component
-
 import { Wallet, getBytesCopy, sha256 } from "ethers";
 import { createWeb3Modal, defaultConfig } from "@web3modal/ethers/react";
 import { gql, useMutation } from "@apollo/client";
-// import { requestProvider } from "webln";
 import { useEffect, useState } from "react";
 
 import Decimal from "decimal.js";
