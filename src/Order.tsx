@@ -5,6 +5,7 @@ import Loading from "./Loading";
 import { QRCodeSVG } from "qrcode.react";
 import toast from "react-hot-toast";
 import { useEffect } from "react";
+import { SendPaymentResponse, requestProvider } from "webln";
 
 const GET_SELL_ORDER = gql`
   query GetSellOrder($id: String!) {
@@ -61,11 +62,30 @@ export default function Order({
       console.log("sendPreimage: " + result);
     };
 
+    async function getWebln() {
+      console.log("get Webln");
+      return await requestProvider();
+    }
+
     if (data === null || data === undefined) return;
 
     console.log("getSellOrder: " + data.sellOrder.status);
 
     switch (data.sellOrder.status) {
+      case "AwaitingPayment":
+        getWebln()
+          .then((webln) => {
+            console.log("webln supported " + webln);
+            const invoice = data.sellOrder.metadata.invoice;
+            return webln.sendPayment(invoice);
+          })
+          .then((paymentResponse: SendPaymentResponse) => {
+            console.log("preimage from payment: " + paymentResponse.preimage);
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+        return;
       case "DeployedContract":
         sendPreimage();
         return;

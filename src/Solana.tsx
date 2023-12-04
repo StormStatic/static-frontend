@@ -1,12 +1,9 @@
-"use client"; // This is a client component
-
 import { Wallet, getBytesCopy, sha256 } from "ethers";
 import { gql, useMutation } from "@apollo/client";
 
 import Decimal from "decimal.js";
 import Loading from "./Loading";
 import Order from "./Order";
-// import { requestProvider } from "webln";
 import { useState } from "react";
 
 const CREATE_SELL_ORDER = gql`
