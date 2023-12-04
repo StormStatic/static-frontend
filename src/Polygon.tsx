@@ -64,10 +64,8 @@ export default function Polygon() {
   const AMOUNT_READABLE = "0.01"; // Set this
 
   const [destAddress, setDestAddress] = useState("");
-  const [preimage] = useState<Uint8Array>(
-    getBytesCopy(Wallet.createRandom().privateKey)
-  );
-  const [paymentHash] = useState<string>(sha256(preimage));
+  const [preimage] = useState<string>(Wallet.createRandom().privateKey);
+  const [paymentHash] = useState<string>(sha256(getBytesCopy(preimage)));
   const [amount, setAmount] = useState(AMOUNT_READABLE);
   const [createPolygonSellOrder, { data, loading }] =
     useMutation(CREATE_SELL_ORDER);
