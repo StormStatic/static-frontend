@@ -1,21 +1,49 @@
 "use client"; // This is a client component
 
-import { gql, useMutation } from "@apollo/client";
-import { useState } from "react";
 import { Wallet, getBytesCopy, sha256 } from "ethers";
+import { createWeb3Modal, defaultConfig } from "@web3modal/ethers/react";
+import { gql, useMutation } from "@apollo/client";
+// import { requestProvider } from "webln";
+import { useEffect, useState } from "react";
 
 import Decimal from "decimal.js";
-import Order from "./Order";
-import { requestProvider } from "webln";
 import Loading from "./Loading";
+import Order from "./Order";
+import { useWeb3ModalAccount } from "@web3modal/ethers/react";
+
+// 1. Get projectId at https://cloud.walletconnect.com
+const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID as string;
+
+// 2. Set chains
+const polygon = {
+  chainId: 137,
+  name: "Polygon",
+  currency: "MATIC",
+  explorerUrl: "https://polygonscan.com",
+  rpcUrl: "https://rpc-mainnet.maticvigil.com",
+};
+
+// 3. Create modal
+const metadata = {
+  name: "Static Exchange",
+  description: "",
+  url: "https://mywebsite.com",
+  icons: ["https://avatars.mywebsite.com/"],
+};
+
+createWeb3Modal({
+  ethersConfig: defaultConfig({ metadata }),
+  chains: [polygon],
+  projectId,
+});
 
 const CREATE_SELL_ORDER = gql`
-  mutation CreateSellOrder(
+  mutation CreatePolygonSellOrder(
     $destAddress: String!
     $paymentHash: String!
     $tokenAmount: Float!
   ) {
-    CreateSellOrder(
+    CreatePolygonSellOrder(
       destAddress: $destAddress
       paymentHash: $paymentHash
       tokenAddress: "0xdc3326e71d45186f113a2f448984ca0e8d201995" # XSGD
@@ -32,22 +60,25 @@ const CREATE_SELL_ORDER = gql`
   }
 `;
 
-export default function Home() {
+export default function Polygon() {
   const AMOUNT_READABLE = "0.01"; // Set this
 
   const [destAddress, setDestAddress] = useState("");
-  const [preimage, setPreimage] = useState<Uint8Array>(
+  const [preimage] = useState<Uint8Array>(
     getBytesCopy(Wallet.createRandom().privateKey)
   );
-  const [paymentHash, setPaymentHash] = useState<string>(sha256(preimage));
+  const [paymentHash] = useState<string>(sha256(preimage));
   const [amount, setAmount] = useState(AMOUNT_READABLE);
-  const [createSellOrder, { data, loading, error }] =
+  const [createPolygonSellOrder, { data, loading }] =
     useMutation(CREATE_SELL_ORDER);
+  const { address } = useWeb3ModalAccount();
 
   console.log("preimage: " + preimage);
   console.log("paymentHash " + paymentHash);
-  const orderId = data === undefined ? "" : data.CreateSellOrder.id;
-  console.log("orderId: " + orderId);
+
+  useEffect(() => {
+    setDestAddress(address as string);
+  }, [address]);
 
   return (
     <>
@@ -69,7 +100,7 @@ export default function Home() {
             />
             <p>Destination Address (on Polygon)</p>
             <input
-              className="indent-2 mx-8 mb-4 border-2"
+              className="mx-8 mb-4 border-2"
               type="text"
               value={destAddress}
               onChange={(e) => {
@@ -80,7 +111,7 @@ export default function Home() {
         </div>
         {paymentHash.length < 1 ? (
           <></>
-        ) : orderId ? (
+        ) : data?.CreatePolygonSellOrder.id ? (
           <></>
         ) : loading ? (
           <Loading />
@@ -94,7 +125,7 @@ export default function Home() {
                 destAddress.length > 1 &&
                 !amountInDecimal.lessThan(minAmountInDecimal)
               ) {
-                createSellOrder({
+                createPolygonSellOrder({
                   variables: {
                     destAddress,
                     paymentHash,
@@ -107,8 +138,13 @@ export default function Home() {
             Create Order
           </button>
         )}
-        {orderId.length > 1 ? (
-          <Order orderId={orderId} preimage={preimage}></Order>
+        {data?.CreatePolygonSellOrder.id.length > 1 ? (
+          <Order
+            orderId={data?.CreatePolygonSellOrder.id}
+            preimage={preimage}
+            assetName="XSGD"
+            chainName="Polygon"
+          ></Order>
         ) : (
           <></>
         )}

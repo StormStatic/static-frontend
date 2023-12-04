@@ -1,10 +1,10 @@
 import { gql, useQuery } from "@apollo/client";
 
 import { Clipboard } from "@capacitor/clipboard";
+import Loading from "./Loading";
 import { QRCodeSVG } from "qrcode.react";
 import toast from "react-hot-toast";
 import { useEffect } from "react";
-import Loading from "./Loading";
 
 const GET_SELL_ORDER = gql`
   query GetSellOrder($id: String!) {
@@ -23,7 +23,12 @@ const GET_SELL_ORDER = gql`
 const HOST = "https://dev-static-api.ap.ngrok.io";
 const STATIC_PREIMAGE_URI = `${HOST}/preimage`;
 const TWO_SEC_MS = 2000;
-export default function Order({ orderId, preimage }: any) {
+export default function Order({
+  orderId,
+  preimage,
+  assetName,
+  chainName,
+}: any) {
   const { loading, error, data, stopPolling } = useQuery(GET_SELL_ORDER, {
     variables: { id: orderId },
     pollInterval: TWO_SEC_MS,
@@ -81,13 +86,13 @@ export default function Order({ orderId, preimage }: any) {
       case "AwaitingPayment":
         return "Waiting for Lightning Payment into Escrow...";
       case "Paid":
-        return "Lightning Funds Escrowed, Escrowing XSGD on Polygon..";
+        return `Lightning Funds Escrowed, Escrowing ${assetName} on ${chainName}..`;
       case "DeployedContract":
-        return "Escrow Created. Outgoing Polygon XSGD Locked in Escrow";
+        return `Escrow Created. Outgoing ${chainName} ${assetName} Locked in Escrow`;
       case "ReceivedPreimage":
-        return "Received Preimage from Frontend. Claimed Lightning funds. Releasing Polygon XSGD Funds...";
+        return `Received Preimage from Frontend. Claimed Lightning funds. Releasing ${chainName} ${assetName} Funds...`;
       case "ReleasedFund":
-        return "XSGD successfully sent to destination address!";
+        return `${assetName} successfully sent to destination address!`;
       default:
         return status;
     }
@@ -131,22 +136,30 @@ export default function Order({ orderId, preimage }: any) {
                 <p>{"Deposit Txn: "}</p>
                 <a
                   className="text-blue underline ml-4"
-                  href={`https://polygonscan.com/tx/${data?.sellOrder.metadata.depositTx}`}
+                  href={
+                    chainName === "Polygon"
+                      ? `https://polygonscan.com/tx/${data?.sellOrder.metadata.depositTx}`
+                      : `https://solscan.io/tx/${data?.sellOrder.metadata.depositTx}`
+                  }
                   target="_blank"
                   rel="noreferrer"
                 >
-                  polygonscan
+                  link
                 </a>
               </div>
               <div className="flex text-md">
                 <p>{"Release Txn: "}</p>
                 <a
                   className="text-blue underline ml-4"
-                  href={`https://polygonscan.com/tx/${data?.sellOrder.metadata.transactionHash}`}
+                  href={
+                    chainName === "Polygon"
+                      ? `https://polygonscan.com/tx/${data?.sellOrder.metadata.transactionHash}`
+                      : `https://solscan.io/tx/${data?.sellOrder.metadata.transactionHash}`
+                  }
                   target="_blank"
                   rel="noreferrer"
                 >
-                  polygonscan
+                  link
                 </a>
               </div>
             </>
