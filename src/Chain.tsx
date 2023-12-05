@@ -1,43 +1,46 @@
-import Polygon from "./Polygon";
-import Solana from "./Solana";
+import { ChainOptions } from "./constants";
+import Swap from "./Swap";
 import { useState } from "react";
 
-enum ChainOptions {
-  Polygon,
-  Solana,
-}
 function Chain() {
   const [chain, setChain] = useState(ChainOptions.Polygon);
   const buttonColor = (test: ChainOptions) => {
     if (chain === test) {
-      return "bg-blue-200";
+      return "bg-blue-300";
     }
   };
   return (
     <>
       <div className="m-4 flex justify-center">
         <button
-          className={`border-2 px-4 rounded-xl py-1 ${buttonColor(
+          className={`border-1 rounded-xl px-4 py-1 ${buttonColor(
             ChainOptions.Solana
           )}`}
           onClick={() => setChain(ChainOptions.Solana)}
         >
-          Solana
+          <div className="flex gap-2 items-center justify-center">
+            <img className="w-5 h-5" src="./sol.png" alt="solana logo"></img>
+            <p>Solana</p>
+          </div>
         </button>
+
         <button
-          className={`border-2 px-4 rounded-xl py-1 ${buttonColor(
+          className={`border-1 rounded-xl px-4 py-1 ${buttonColor(
             ChainOptions.Polygon
           )}`}
           onClick={() => setChain(ChainOptions.Polygon)}
         >
-          Polygon
+          <div className="flex gap-2 items-center justify-center">
+            <img className="w-5 h-5" src="./matic.png" alt="matic logo"></img>
+            <p>Polygon</p>
+          </div>
         </button>
       </div>
       <div>
         {chain === ChainOptions.Polygon ? (
-          <Polygon></Polygon>
+          <Swap chain={ChainOptions.Polygon}></Swap>
         ) : (
-          <Solana></Solana>
+          <Swap chain={ChainOptions.Solana}></Swap>
         )}
       </div>
     </>

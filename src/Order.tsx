@@ -33,10 +33,7 @@ export default function Order({
   const { loading, error, data, stopPolling } = useQuery(GET_SELL_ORDER, {
     variables: { id: orderId },
     pollInterval: TWO_SEC_MS,
-    onCompleted: () => {},
   });
-
-  console.log("start getSellOrder polling");
 
   const writeToClipboard = async (d: any) => {
     await Clipboard.write({
@@ -68,9 +65,6 @@ export default function Order({
     }
 
     if (data === null || data === undefined) return;
-
-    console.log("getSellOrder: " + data.sellOrder.status);
-
     switch (data.sellOrder.status) {
       case "AwaitingPayment":
         getWebln()
@@ -91,7 +85,6 @@ export default function Order({
         return;
       case "ReleasedFund":
       case "Expired":
-        console.log("stop polling");
         stopPolling();
         return;
       default:
@@ -120,76 +113,79 @@ export default function Order({
 
   return (
     <>
-      {loading ? <Loading /> : <></>}
-      {error ? <p>{"Error:" + error.message}</p> : <></>}
-      {data?.sellOrder.status ? (
-        <p className="m-4 border-2 p-4 rounded-3xl bg-slate-600 text-slate-200 shadow-lg break-normal">
-          {mapStatus(data?.sellOrder.status)}
-        </p>
-      ) : (
-        <></>
-      )}
-      {data?.sellOrder?.metadata.invoice &&
-      data?.sellOrder?.status === "AwaitingPayment" ? (
-        <div className="flex flex-col justify-center items-center">
-          <QRCodeSVG
-            size={250}
-            includeMargin={true}
-            value={data?.sellOrder?.metadata.invoice}
-            onClick={() => writeToClipboard(data?.sellOrder?.metadata.invoice)}
-          />
-          <p className="w-96 mx-4 break-all">
-            {data?.sellOrder?.metadata.invoice}
-          </p>
-        </div>
-      ) : (
-        <></>
-      )}
-      {data?.sellOrder ? (
-        <>
-          <div className="text-xl break-all w-96">
-            <p>{data?.sellOrder.metadata.failureReason}</p>
-          </div>
-          {data?.sellOrder.metadata.depositTx ? (
+      <div className="flex flex-col justify-center items-center">
+        <div className="w-60 flex flex-col justify-center items-center">
+          {loading ? <Loading /> : <></>}
+          {error ? <p>{"Error:" + error.message}</p> : <></>}
+          {data?.sellOrder.status ? (
+            <p className="border-2 p-4 rounded-3xl bg-slate-600 text-slate-200 shadow-lg break-normal">
+              {mapStatus(data?.sellOrder.status)}
+            </p>
+          ) : (
+            <></>
+          )}
+          {data?.sellOrder?.metadata.invoice &&
+          data?.sellOrder?.status === "AwaitingPayment" ? (
+            <div className="flex flex-col justify-center items-center">
+              <QRCodeSVG
+                size={250}
+                includeMargin={true}
+                value={data?.sellOrder?.metadata.invoice}
+                onClick={() =>
+                  writeToClipboard(data?.sellOrder?.metadata.invoice)
+                }
+              />
+            </div>
+          ) : (
+            <></>
+          )}
+          {data?.sellOrder ? (
             <>
-              <div className="flex text-md">
-                <p>{"Deposit Txn: "}</p>
-                <a
-                  className="text-blue underline ml-4"
-                  href={
-                    chainName === "Polygon"
-                      ? `https://polygonscan.com/tx/${data?.sellOrder.metadata.depositTx}`
-                      : `https://solscan.io/tx/${data?.sellOrder.metadata.depositTx}`
-                  }
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  link
-                </a>
+              <div className="text-sm break-normal text-red-500 mt-4">
+                <p>{data?.sellOrder.metadata.failureReason}</p>
               </div>
-              <div className="flex text-md">
-                <p>{"Release Txn: "}</p>
-                <a
-                  className="text-blue underline ml-4"
-                  href={
-                    chainName === "Polygon"
-                      ? `https://polygonscan.com/tx/${data?.sellOrder.metadata.transactionHash}`
-                      : `https://solscan.io/tx/${data?.sellOrder.metadata.transactionHash}`
-                  }
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  link
-                </a>
-              </div>
+              {data?.sellOrder.metadata.depositTx ? (
+                <>
+                  <div className="flex text-md">
+                    <p>{"Deposit Txn: "}</p>
+                    <a
+                      className="text-blue underline ml-4"
+                      href={
+                        chainName === "Polygon"
+                          ? `https://polygonscan.com/tx/${data?.sellOrder.metadata.depositTx}`
+                          : `https://solscan.io/tx/${data?.sellOrder.metadata.depositTx}`
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      link
+                    </a>
+                  </div>
+                  <div className="flex text-md">
+                    <p>{"Release Txn: "}</p>
+                    <a
+                      className="text-blue underline ml-4"
+                      href={
+                        chainName === "Polygon"
+                          ? `https://polygonscan.com/tx/${data?.sellOrder.metadata.transactionHash}`
+                          : `https://solscan.io/tx/${data?.sellOrder.metadata.transactionHash}`
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      link
+                    </a>
+                  </div>
+                </>
+              ) : (
+                <></>
+              )}
             </>
           ) : (
             <></>
           )}
-        </>
-      ) : (
-        <></>
-      )}
+        </div>
+      </div>
     </>
   );
 }
