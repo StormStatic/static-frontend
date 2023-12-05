@@ -10,7 +10,6 @@ import { useEffect, useState } from "react";
 import { ChainOptions } from "./constants";
 import Decimal from "decimal.js";
 import { FaAngleDown } from "react-icons/fa";
-import Loading from "./Loading";
 import Order from "./Order";
 import { useMutation } from "@apollo/client";
 import { useWeb3ModalAccount } from "@web3modal/ethers/react";
@@ -30,7 +29,7 @@ export default function Swap({ chain }: SwapParams) {
     chain === ChainOptions.Polygon
       ? CREATE_POLYGON_SELL_ORDER
       : CREATE_SOLANA_SELL_ORDER;
-  const [createOrder, { data, loading }] = useMutation(gql);
+  const [createOrder, { data }] = useMutation(gql);
 
   const accessor =
     chain === ChainOptions.Polygon

@@ -38,9 +38,9 @@ function Chain() {
       </div>
       <div>
         {chain === ChainOptions.Polygon ? (
-          <Swap chain={ChainOptions.Polygon}></Swap>
+          <Swap key={"1"} chain={ChainOptions.Polygon}></Swap>
         ) : (
-          <Swap chain={ChainOptions.Solana}></Swap>
+          <Swap key={"2"} chain={ChainOptions.Solana}></Swap>
         )}
       </div>
     </>
