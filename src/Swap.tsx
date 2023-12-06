@@ -5,14 +5,17 @@ import {
   CREATE_SOLANA_SELL_ORDER,
 } from "./constants";
 import { Wallet, getBytesCopy, sha256 } from "ethers";
-import { useEffect, useState } from "react";
 
 import { ChainOptions } from "./constants";
 import Decimal from "decimal.js";
 import { FaAngleDown } from "react-icons/fa";
+import Loading from "./Loading";
 import Order from "./Order";
+import PolygonAddress from "./PolygonAddress";
+import SolAddress from "./SolAddress";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useMutation } from "@apollo/client";
-import { useWeb3ModalAccount } from "@web3modal/ethers/react";
+import { useState } from "react";
 
 export interface SwapParams {
   chain: ChainOptions;
@@ -21,6 +24,7 @@ export interface SwapParams {
 export default function Swap({ chain }: SwapParams) {
   const MIN_AMOUNT = "0.01";
   const [destAddress, setDestAddress] = useState("");
+
   const [preimage] = useState<string>(Wallet.createRandom().privateKey);
   const [paymentHash] = useState<string>(sha256(getBytesCopy(preimage)));
   const [amount, setAmount] = useState(MIN_AMOUNT);
@@ -29,19 +33,12 @@ export default function Swap({ chain }: SwapParams) {
     chain === ChainOptions.Polygon
       ? CREATE_POLYGON_SELL_ORDER
       : CREATE_SOLANA_SELL_ORDER;
-  const [createOrder, { data }] = useMutation(gql);
+  const [createOrder, { data, loading }] = useMutation(gql);
 
   const accessor =
     chain === ChainOptions.Polygon
       ? "CreatePolygonSellOrder"
       : "CreateSolanaSellOrder";
-
-  const { address } = useWeb3ModalAccount();
-  useEffect(() => {
-    if (chain === ChainOptions.Polygon) {
-      setDestAddress(address as string);
-    }
-  }, [address, chain]);
 
   const canCreateOrder = () => {
     const amountInDecimal = new Decimal(amount);
@@ -59,7 +56,11 @@ export default function Swap({ chain }: SwapParams) {
         <div>
           <div className="flex flex-col border-2 rounded-3xl shadow-lg p-4">
             <div className="flex justify-end mb-3">
-              {chain === ChainOptions.Polygon ? <w3m-button /> : <></>}
+              {chain === ChainOptions.Polygon ? (
+                <w3m-button />
+              ) : (
+                <WalletMultiButton />
+              )}
             </div>
 
             <div className="bg-gray-100 rounded-3xl mb-2">
@@ -117,29 +118,29 @@ export default function Swap({ chain }: SwapParams) {
                 </div>
               </div>
             </div>
-            <div className="bg-gray-100 rounded-3xl mb-4">
-              <div className="flex flex-col my-10 mx-4">
-                <p className="text-gray-500">Receive to:</p>
-                <input
-                  className="text-2xl bg-transparent placeholder-gray-300 flex-grow"
-                  type="text"
-                  placeholder="0x..."
-                  value={destAddress}
-                  onChange={(e) => {
-                    setDestAddress(e.target.value);
-                  }}
-                />
+            {chain === ChainOptions.Polygon ? (
+              <PolygonAddress
+                destAddress={destAddress}
+                setDestAddress={setDestAddress}
+              ></PolygonAddress>
+            ) : (
+              <SolAddress
+                destAddress={destAddress}
+                setDestAddress={setDestAddress}
+              ></SolAddress>
+            )}
+
+            {data?.[accessor]?.id ? (
+              <></>
+            ) : loading ? (
+              <div className="flex flex-col justify-center items-center">
+                <Loading></Loading>
               </div>
-            </div>
-            {paymentHash.length < 1 ? (
-              <></>
-            ) : data?.[accessor]?.id ? (
-              <></>
             ) : (
               <button
                 className={
                   canCreateOrder()
-                    ? "p-4 rounded-full text-gray-100 bg-blue-500 shadow-sm"
+                    ? "p-4 rounded-full text-gray-100 bg-blue-500 shadow-sm active:bg-blue-200"
                     : "border-2 p-4 border-gray-200 rounded-full text-gray-300"
                 }
                 onClick={() => {

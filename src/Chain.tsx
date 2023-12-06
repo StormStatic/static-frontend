@@ -1,4 +1,5 @@
 import { ChainOptions } from "./constants";
+import Connect from "./Connect";
 import Swap from "./Swap";
 import { useState } from "react";
 
@@ -40,7 +41,9 @@ function Chain() {
         {chain === ChainOptions.Polygon ? (
           <Swap key={"1"} chain={ChainOptions.Polygon}></Swap>
         ) : (
-          <Swap key={"2"} chain={ChainOptions.Solana}></Swap>
+          <Connect chain={ChainOptions.Solana}>
+            <Swap key={"2"} chain={ChainOptions.Solana}></Swap>
+          </Connect>
         )}
       </div>
     </>
