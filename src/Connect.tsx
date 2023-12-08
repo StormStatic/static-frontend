@@ -9,6 +9,7 @@ import {
 } from "@solana/wallet-adapter-react";
 import { ReactElement, useMemo } from "react";
 
+import { BackpackWalletAdapter } from "@solana/wallet-adapter-backpack";
 import { ChainOptions } from "./constants";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
@@ -29,6 +30,7 @@ export default function Connect({ chain, children }: ConnectParams) {
 
   const wallets = useMemo(
     () => [
+      new BackpackWalletAdapter(),
       new CoinbaseWalletAdapter(),
       new LedgerWalletAdapter(),
       new SolflareWalletAdapter(),

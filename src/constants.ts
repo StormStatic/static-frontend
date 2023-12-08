@@ -3,6 +3,7 @@ import { gql } from "@apollo/client";
 export enum ChainOptions {
   Polygon,
   Solana,
+  Tron,
 }
 
 export const CREATE_POLYGON_SELL_ORDER = gql`
@@ -38,6 +39,29 @@ export const CREATE_SOLANA_SELL_ORDER = gql`
       destAddress: $destAddress
       paymentHash: $paymentHash
       tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" # USDC
+      tokenAmount: $tokenAmount
+    ) {
+      id
+      status
+      paymentHash
+      tokenAddress
+      tokenAmount
+      destAddress
+      metadata
+    }
+  }
+`;
+
+export const CREATE_TRON_SELL_ORDER = gql`
+  mutation CreateTronSellOrder(
+    $destAddress: String!
+    $paymentHash: String!
+    $tokenAmount: Float!
+  ) {
+    CreateTronSellOrder(
+      destAddress: $destAddress
+      paymentHash: $paymentHash
+      tokenAddress: "TUodQCYDWhRcudt1qFiskzSAh25S8NDtkN" # USDT
       tokenAmount: $tokenAmount
     ) {
       id
