@@ -61,7 +61,7 @@ export const CREATE_TRON_SELL_ORDER = gql`
     CreateTronSellOrder(
       destAddress: $destAddress
       paymentHash: $paymentHash
-      tokenAddress: "TUodQCYDWhRcudt1qFiskzSAh25S8NDtkN" # USDT
+      tokenAddress: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t" # USDT
       tokenAmount: $tokenAmount
     ) {
       id
