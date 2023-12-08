@@ -91,7 +91,7 @@ export default function Swap({ chain }: SwapParams) {
       case ChainOptions.Tron:
         return (
           <>
-            <img className="w-8 h-8" alt="usdc logo" src="./usdc.png" />
+            <img className="w-8 h-8" alt="usdt logo" src="./usdt.png" />
             <p className="text-sm">USDT</p>
           </>
         );

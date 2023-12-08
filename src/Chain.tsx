@@ -46,7 +46,7 @@ function Chain() {
       <div className="m-4 flex justify-center">
         {chainButton(ChainOptions.Polygon, "./matic.png", "Polygon")}
         {chainButton(ChainOptions.Solana, "./sol.png", "Solana")}
-        {chainButton(ChainOptions.Tron, "./sol.png", "Tron")}
+        {chainButton(ChainOptions.Tron, "./tron.png", "Tron")}
       </div>
       <div>{swapEl()}</div>
     </>
