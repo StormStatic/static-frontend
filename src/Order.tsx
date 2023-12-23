@@ -35,11 +35,20 @@ export default function Order({
     pollInterval: TWO_SEC_MS,
   });
 
+  const hasWriteToClipboardPermission =
+    window.isSecureContext && navigator.clipboard;
+
   const writeToClipboard = async (d: any) => {
-    await Clipboard.write({
-      string: d,
-    });
-    toast.success("Copied!", { duration: TWO_SEC_MS });
+    if (!hasWriteToClipboardPermission) {
+      return;
+    }
+    await Clipboard.write({ string: d })
+      .then((result) => {
+        toast.success("Copied!", { duration: TWO_SEC_MS });
+      })
+      .catch((reject) => {
+        toast.success(d, { duration: TWO_SEC_MS });
+      });
   };
 
   useEffect(() => {
@@ -134,7 +143,17 @@ export default function Order({
                 onClick={() =>
                   writeToClipboard(data?.sellOrder?.metadata.invoice)
                 }
+                onTouchEnd={() =>
+                  writeToClipboard(data?.sellOrder?.metadata.invoice)
+                }
               />
+              {!hasWriteToClipboardPermission ? (
+                <p className="truncate w-48">
+                  {data?.sellOrder?.metadata.invoice}
+                </p>
+              ) : (
+                <></>
+              )}
             </div>
           ) : (
             <></>
