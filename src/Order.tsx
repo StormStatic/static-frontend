@@ -1,5 +1,4 @@
 import { gql, useQuery } from "@apollo/client";
-
 import { Clipboard } from "@capacitor/clipboard";
 import Loading from "./Loading";
 import { QRCodeSVG } from "qrcode.react";
@@ -24,70 +23,64 @@ const GET_SELL_ORDER = gql`
 const HOST = "https://dev-static-api.ap.ngrok.io";
 const STATIC_PREIMAGE_URI = `${HOST}/preimage`;
 const TWO_SEC_MS = 2000;
+
+type StepStatus = "pending" | "active" | "done";
+
+interface OrderProps {
+  orderId: string;
+  preimage: string;
+  assetName: string;
+  chainName: string;
+}
+
 export default function Order({
   orderId,
   preimage,
   assetName,
   chainName,
-}: any) {
+}: OrderProps) {
   const { loading, error, data, stopPolling } = useQuery(GET_SELL_ORDER, {
     variables: { id: orderId },
     pollInterval: TWO_SEC_MS,
   });
 
-  const hasWriteToClipboardPermission =
+  const hasClipboardPermission =
     window.isSecureContext && navigator.clipboard;
 
-  const writeToClipboard = async (d: any) => {
-    if (!hasWriteToClipboardPermission) {
-      return;
-    }
-    await Clipboard.write({ string: d })
-      .then((result) => {
-        toast.success("Copied!", { duration: TWO_SEC_MS });
-      })
-      .catch((reject) => {
-        toast.success(d, { duration: TWO_SEC_MS });
-      });
+  const writeToClipboard = async (text: string) => {
+    if (!hasClipboardPermission) return;
+    await Clipboard.write({ string: text })
+      .then(() => toast.success("Copied!", { duration: TWO_SEC_MS }))
+      .catch(() => toast.success(text, { duration: TWO_SEC_MS }));
   };
 
   useEffect(() => {
     const sendPreimage = async () => {
       const url =
         "https://corsproxy.io/?" + encodeURIComponent(STATIC_PREIMAGE_URI);
-      const result = await fetch(url, {
+      await fetch(url, {
         method: "POST",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          data: { wid: orderId, preimage: preimage },
-        }),
+        body: JSON.stringify({ data: { wid: orderId, preimage } }),
       });
-      console.log("sendPreimage: " + result);
     };
 
     async function getWebln() {
-      console.log("get Webln");
       return await requestProvider();
     }
 
-    if (data === null || data === undefined) return;
+    if (!data) return;
     switch (data.sellOrder.status) {
       case "AwaitingPayment":
         getWebln()
-          .then((webln) => {
-            console.log("webln supported " + webln);
-            const invoice = data.sellOrder.metadata.invoice;
-            return webln.sendPayment(invoice);
-          })
-          .then((paymentResponse: SendPaymentResponse) => {
-            console.log("preimage from payment: " + paymentResponse.preimage);
-          })
-          .catch((error) => {
-            console.log(error);
-          });
+          .then((webln) => webln.sendPayment(data.sellOrder.metadata.invoice))
+          .then((r: SendPaymentResponse) =>
+            console.log("preimage from payment:", r.preimage)
+          )
+          .catch(console.log);
         return;
       case "DeployedContract":
         sendPreimage();
@@ -101,110 +94,263 @@ export default function Order({
     }
   }, [data, stopPolling, orderId, preimage]);
 
-  const mapStatus = (status: any) => {
+  const status = data?.sellOrder?.status;
+  const invoice = data?.sellOrder?.metadata?.invoice;
+  const depositTx = data?.sellOrder?.metadata?.depositTx;
+  const releaseTx = data?.sellOrder?.metadata?.transactionHash;
+  const failureReason = data?.sellOrder?.metadata?.failureReason;
+  const tokenAmount = data?.sellOrder?.tokenAmount;
+
+  // Map order status to stepper step states
+  const step1Status: StepStatus =
+    !status || status === "Created"
+      ? "pending"
+      : status === "AwaitingPayment"
+      ? "active"
+      : "done";
+
+  const step2Status: StepStatus =
+    !status ||
+    status === "Created" ||
+    status === "AwaitingPayment"
+      ? "pending"
+      : status === "Paid" || status === "DeployedContract"
+      ? "active"
+      : "done";
+
+  const step3Status: StepStatus =
+    status === "ReceivedPreimage"
+      ? "active"
+      : status === "ReleasedFund"
+      ? "done"
+      : "pending";
+
+  const txUrl = (tx: string) => {
+    if (chainName === "Polygon")
+      return `https://polygonscan.com/tx/${tx}`;
+    if (chainName === "Tron")
+      return `https://tronscan.org/#/transaction/${tx}`;
+    return `https://solscan.io/tx/${tx}`;
+  };
+
+  const statusBannerText = () => {
     switch (status) {
       case "Created":
-        return "Order Created";
+        return "Order created — generating invoice…";
       case "AwaitingPayment":
-        return "Waiting for Lightning Payment into Escrow...";
+        return "Waiting for Lightning payment…";
       case "Paid":
-        return `Lightning Funds Escrowed, Escrowing ${assetName} on ${chainName}..`;
+        return `Funding ${chainName} escrow…`;
       case "DeployedContract":
-        return `Escrow Created. Outgoing ${chainName} ${assetName} Locked in Escrow`;
+        return "Escrow funded — releasing funds…";
       case "ReceivedPreimage":
-        return `Received Preimage from Frontend. Claimed Lightning funds. Releasing ${chainName} ${assetName} Funds...`;
+        return `Releasing ${assetName} to your wallet…`;
       case "ReleasedFund":
-        return `${assetName} successfully sent to destination address!`;
+        return `${assetName} sent successfully!`;
+      case "Expired":
+        return "Order expired.";
       default:
-        return status;
+        return "Processing…";
     }
   };
 
+  if (loading && !data) {
+    return (
+      <div className="flex justify-center py-6">
+        <Loading />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <p className="text-red-500 text-sm text-center py-4">
+        Error: {error.message}
+      </p>
+    );
+  }
+
   return (
-    <>
-      <div className="flex flex-col justify-center items-center">
-        <div className="w-60 flex flex-col justify-center items-center">
-          {loading ? <Loading /> : <></>}
-          {error ? <p>{"Error:" + error.message}</p> : <></>}
-          {data?.sellOrder.status ? (
-            <p className="border-2 p-4 rounded-3xl bg-slate-600 text-slate-200 shadow-lg break-normal">
-              {mapStatus(data?.sellOrder.status)}
+    <div>
+      {/* Status banner */}
+      <div className="flex items-center gap-2 px-3 py-2.5 bg-orange-50 border border-orange-200 rounded-xl mb-4">
+        <span
+          className={`w-2 h-2 rounded-full flex-shrink-0 ${
+            status === "ReleasedFund"
+              ? "bg-emerald-500"
+              : "bg-orange-500 animate-pulse"
+          }`}
+        />
+        <span className="text-xs font-medium text-orange-900">
+          {statusBannerText()}
+        </span>
+      </div>
+
+      {/* QR card — visible while awaiting payment */}
+      {invoice && status === "AwaitingPayment" && (
+        <div className="bg-white border-2 border-dashed border-orange-200 rounded-xl p-4 text-center mb-4">
+          <QRCodeSVG
+            size={160}
+            includeMargin={true}
+            value={invoice}
+            className="mx-auto"
+          />
+          <div className="flex gap-2 justify-center mt-3">
+            <button
+              className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 text-orange-900 rounded-lg px-3 py-1.5 text-xs font-semibold hover:bg-orange-100 transition-colors"
+              onClick={() => writeToClipboard(invoice)}
+            >
+              📋 Copy invoice
+            </button>
+          </div>
+          {!hasClipboardPermission && (
+            <p className="font-mono text-xs text-stone-500 break-all mt-2.5 p-2 bg-cream-100 rounded-lg leading-relaxed">
+              {invoice}
             </p>
-          ) : (
-            <></>
-          )}
-          {data?.sellOrder?.metadata.invoice &&
-          data?.sellOrder?.status === "AwaitingPayment" ? (
-            <div className="flex flex-col justify-center items-center">
-              <QRCodeSVG
-                size={250}
-                includeMargin={true}
-                value={data?.sellOrder?.metadata.invoice}
-                onClick={() =>
-                  writeToClipboard(data?.sellOrder?.metadata.invoice)
-                }
-                onTouchEnd={() =>
-                  writeToClipboard(data?.sellOrder?.metadata.invoice)
-                }
-              />
-              {!hasWriteToClipboardPermission ? (
-                <p className="truncate w-48">
-                  {data?.sellOrder?.metadata.invoice}
-                </p>
-              ) : (
-                <></>
-              )}
-            </div>
-          ) : (
-            <></>
-          )}
-          {data?.sellOrder ? (
-            <>
-              <div className="text-sm break-normal text-red-500 mt-4">
-                <p>{data?.sellOrder.metadata.failureReason}</p>
-              </div>
-              {data?.sellOrder.metadata.depositTx ? (
-                <>
-                  <div className="flex text-md">
-                    <p>{"Deposit Txn: "}</p>
-                    <a
-                      className="text-blue underline ml-4"
-                      href={
-                        chainName === "Polygon"
-                          ? `https://polygonscan.com/tx/${data?.sellOrder.metadata.depositTx}`
-                          : `https://solscan.io/tx/${data?.sellOrder.metadata.depositTx}`
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      link
-                    </a>
-                  </div>
-                  <div className="flex text-md">
-                    <p>{"Release Txn: "}</p>
-                    <a
-                      className="text-blue underline ml-4"
-                      href={
-                        chainName === "Polygon"
-                          ? `https://polygonscan.com/tx/${data?.sellOrder.metadata.transactionHash}`
-                          : `https://solscan.io/tx/${data?.sellOrder.metadata.transactionHash}`
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      link
-                    </a>
-                  </div>
-                </>
-              ) : (
-                <></>
-              )}
-            </>
-          ) : (
-            <></>
           )}
         </div>
+      )}
+
+      {/* Failure reason */}
+      {failureReason && (
+        <p className="text-red-500 text-xs text-center mb-3">
+          {failureReason}
+        </p>
+      )}
+
+      {/* Vertical timeline stepper */}
+      <div className="relative pl-7">
+        {/* Connecting line */}
+        <div className="absolute left-[9px] top-3 bottom-3 w-0.5 bg-cream-300" />
+
+        <StepItem
+          stepNum="⚡"
+          status={step1Status}
+          title="Pay Lightning invoice"
+          sub={
+            step1Status === "active"
+              ? "Scan with any Lightning wallet"
+              : step1Status === "done"
+              ? "Paid"
+              : "Waiting"
+          }
+        />
+
+        <StepItem
+          stepNum="2"
+          status={step2Status}
+          title={`Escrow funded on ${chainName}`}
+          sub={
+            step2Status === "active"
+              ? "Submitting to escrow…"
+              : step2Status === "done" && depositTx
+              ? ""
+              : "Pending — starts after payment"
+          }
+          txLink={
+            step2Status === "done" && depositTx
+              ? txUrl(depositTx)
+              : undefined
+          }
+          txLabel="View escrow tx ↗"
+        />
+
+        <StepItem
+          stepNum="3"
+          status={step3Status}
+          title="Released to your wallet"
+          sub={
+            step3Status === "active"
+              ? `Releasing ${tokenAmount} ${assetName}…`
+              : step3Status === "done"
+              ? `${tokenAmount} ${assetName} sent`
+              : `${tokenAmount ?? "—"} ${assetName} will arrive`
+          }
+          txLink={
+            step3Status === "done" && releaseTx
+              ? txUrl(releaseTx)
+              : undefined
+          }
+          txLabel="View release tx ↗"
+          isLast
+        />
       </div>
-    </>
+    </div>
+  );
+}
+
+function StepItem({
+  stepNum,
+  status,
+  title,
+  sub,
+  txLink,
+  txLabel,
+  isLast = false,
+}: {
+  stepNum: string;
+  status: StepStatus;
+  title: string;
+  sub: string;
+  txLink?: string;
+  txLabel?: string;
+  isLast?: boolean;
+}) {
+  const dotBase =
+    "absolute -left-4 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold z-10";
+
+  const dotStyle: React.CSSProperties =
+    status === "active"
+      ? {
+          background: "linear-gradient(90deg,#F97316,#EA580C)",
+          border: "2px solid #F97316",
+          boxShadow: "0 0 0 4px rgba(249,115,22,0.18)",
+          color: "#fff",
+        }
+      : {};
+
+  const dotClassName =
+    status === "done"
+      ? `${dotBase} bg-emerald-600 border-2 border-emerald-600 text-white`
+      : status === "active"
+      ? `${dotBase} animate-pulse`
+      : `${dotBase} bg-white border-2 border-cream-300 text-stone-400`;
+
+  return (
+    <div className={`relative ${isLast ? "" : "pb-5"}`}>
+      <div className={dotClassName} style={dotStyle}>
+        {status === "done" ? "✓" : stepNum}
+      </div>
+      <p
+        className={`text-sm font-semibold mb-0.5 ${
+          status === "active"
+            ? "text-orange-900"
+            : status === "done"
+            ? "text-stone-700"
+            : "text-stone-400"
+        }`}
+      >
+        {title}
+      </p>
+      {sub && (
+        <p
+          className={`text-xs ${
+            status === "pending" ? "text-stone-300" : "text-stone-500"
+          }`}
+        >
+          {sub}
+        </p>
+      )}
+      {txLink && (
+        <a
+          href={txLink}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 hover:underline mt-1"
+        >
+          {txLabel}
+        </a>
+      )}
+    </div>
   );
 }

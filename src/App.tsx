@@ -1,8 +1,10 @@
 import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
 import { createWeb3Modal, defaultConfig } from "@web3modal/ethers/react";
 
-import Chain from "./Chain";
+import Connect from "./Connect";
+import Swap from "./Swap";
 import { Toaster } from "react-hot-toast";
+import { ChainOptions } from "./constants";
 
 // 1. Get projectId at https://cloud.walletconnect.com
 const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID as string;
@@ -43,7 +45,10 @@ function App() {
     <div className="App">
       <ApolloProvider client={c}>
         <Toaster />
-        <Chain />
+        {/* Connect provides the Solana wallet adapter context for autofill */}
+        <Connect chain={ChainOptions.Solana}>
+          <Swap />
+        </Connect>
       </ApolloProvider>
     </div>
   );

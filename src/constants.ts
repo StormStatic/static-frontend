@@ -6,6 +6,50 @@ export enum ChainOptions {
   Tron,
 }
 
+export interface AssetConfig {
+  key: string;
+  token: string;
+  fullName: string;
+  chain: string;
+  chainOption: ChainOptions;
+  addrPlaceholder: string;
+  iconBg: string;
+  iconText: string;
+}
+
+export const ASSETS: AssetConfig[] = [
+  {
+    key: "usdc",
+    token: "USDC",
+    fullName: "USD Coin",
+    chain: "Solana",
+    chainOption: ChainOptions.Solana,
+    addrPlaceholder: "Solana address (e.g. 7xK...nQ4)",
+    iconBg: "#2775CA",
+    iconText: "$",
+  },
+  {
+    key: "xsgd",
+    token: "XSGD",
+    fullName: "StraitsX Singapore Dollar",
+    chain: "Polygon",
+    chainOption: ChainOptions.Polygon,
+    addrPlaceholder: "Polygon address (0x...)",
+    iconBg: "#8247E5",
+    iconText: "$",
+  },
+  {
+    key: "usdt",
+    token: "USDT",
+    fullName: "Tether",
+    chain: "Tron",
+    chainOption: ChainOptions.Tron,
+    addrPlaceholder: "Tron address (T...)",
+    iconBg: "#EF4444",
+    iconText: "₮",
+  },
+];
+
 export const CREATE_POLYGON_SELL_ORDER = gql`
   mutation CreatePolygonSellOrder(
     $destAddress: String!
