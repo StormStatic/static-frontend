@@ -1,149 +1,75 @@
-"use client"; // This is a client component
+"use client";
 
 import {
   CREATE_POLYGON_SELL_ORDER,
   CREATE_SOLANA_SELL_ORDER,
   CREATE_TRON_SELL_ORDER,
+  ChainOptions,
 } from "./constants";
 import { Wallet, getBytesCopy, sha256 } from "ethers";
 
-import { ChainOptions } from "./constants";
+import AmountInput from "./ui/AmountInput";
+import AssetPill from "./ui/AssetPill";
+import AssetSheet from "./ui/AssetSheet";
+import Button from "./ui/Button";
+import Card from "./ui/Card";
 import Decimal from "decimal.js";
-import { FaAngleDown } from "react-icons/fa";
 import Loading from "./Loading";
 import Order from "./Order";
-import PolygonAddress from "./PolygonAddress";
-import SolAddress from "./SolAddress";
+import ReceiveAddressField from "./ReceiveAddressField";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useMutation } from "@apollo/client";
 import { useState } from "react";
 
-export interface SwapParams {
-  chain: ChainOptions;
-}
-
-export default function Swap({ chain }: SwapParams) {
+export default function Swap() {
   const MIN_AMOUNT = "0.01";
   const [destAddress, setDestAddress] = useState("");
+  const [amount, setAmount] = useState(MIN_AMOUNT);
+  const [chain, setChain] = useState(ChainOptions.Polygon);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const [preimage] = useState<string>(Wallet.createRandom().privateKey);
   const [paymentHash] = useState<string>(sha256(getBytesCopy(preimage)));
-  const [amount, setAmount] = useState(MIN_AMOUNT);
+
   const gql = (): any => {
     switch (chain) {
-      case ChainOptions.Polygon:
-        return CREATE_POLYGON_SELL_ORDER;
-      case ChainOptions.Solana:
-        return CREATE_SOLANA_SELL_ORDER;
-      case ChainOptions.Tron:
-        return CREATE_TRON_SELL_ORDER;
+      case ChainOptions.Polygon: return CREATE_POLYGON_SELL_ORDER;
+      case ChainOptions.Solana:  return CREATE_SOLANA_SELL_ORDER;
+      case ChainOptions.Tron:    return CREATE_TRON_SELL_ORDER;
     }
   };
+
   const [createOrder, { data, loading }] = useMutation(gql());
 
   const accessor = (): string => {
     switch (chain) {
-      case ChainOptions.Polygon:
-        return "CreatePolygonSellOrder";
-      case ChainOptions.Solana:
-        return "CreateSolanaSellOrder";
-      case ChainOptions.Tron:
-        return "CreateTronSellOrder";
+      case ChainOptions.Polygon: return "CreatePolygonSellOrder";
+      case ChainOptions.Solana:  return "CreateSolanaSellOrder";
+      case ChainOptions.Tron:    return "CreateTronSellOrder";
     }
   };
 
-  const assetName = () => {
+  const assetName = (): string => {
     switch (chain) {
-      case ChainOptions.Polygon:
-        return "XSGD";
-      case ChainOptions.Solana:
-        return "USDC";
-      case ChainOptions.Tron:
-        return "USDT";
+      case ChainOptions.Polygon: return "XSGD";
+      case ChainOptions.Solana:  return "USDC";
+      case ChainOptions.Tron:    return "USDT";
     }
   };
-  const chainName = () => {
+
+  const chainName = (): string => {
     switch (chain) {
-      case ChainOptions.Polygon:
-        return "Polygon";
-      case ChainOptions.Solana:
-        return "Solana";
-      case ChainOptions.Tron:
-        return "Tron";
-    }
-  };
-  const swapIcon = () => {
-    switch (chain) {
-      case ChainOptions.Polygon:
-        return (
-          <>
-            <img className="w-8 h-8" alt="xsgd logo" src="./xsgd.png" />
-            <p className="text-sm">XSGD</p>
-          </>
-        );
-      case ChainOptions.Solana:
-        return (
-          <>
-            <img className="w-8 h-8" alt="usdc logo" src="./usdc.png" />
-            <p className="text-sm">USDC</p>
-          </>
-        );
-      case ChainOptions.Tron:
-        return (
-          <>
-            <img className="w-8 h-8" alt="usdt logo" src="./usdt.png" />
-            <p className="text-sm">USDT</p>
-          </>
-        );
+      case ChainOptions.Polygon: return "Polygon";
+      case ChainOptions.Solana:  return "Solana";
+      case ChainOptions.Tron:    return "Tron";
     }
   };
 
   const connectButton = () => {
     switch (chain) {
-      case ChainOptions.Polygon:
-        return <w3m-button />;
-      case ChainOptions.Solana:
-        return <WalletMultiButton />;
-      case ChainOptions.Tron:
-        return <></>;
-    }
-  };
-
-  const addressEl = () => {
-    switch (chain) {
-      case ChainOptions.Polygon:
-        return (
-          <PolygonAddress
-            destAddress={destAddress}
-            setDestAddress={setDestAddress}
-          ></PolygonAddress>
-        );
-      case ChainOptions.Solana:
-        return (
-          <SolAddress
-            destAddress={destAddress}
-            setDestAddress={setDestAddress}
-          ></SolAddress>
-        );
-      case ChainOptions.Tron:
-        return (
-          <>
-            <div className="bg-gray-100 rounded-3xl mb-4">
-              <div className="flex flex-col my-10 mx-4">
-                <p className="text-gray-500">Receive to:</p>
-                <input
-                  className="text-2xl bg-transparent placeholder-gray-300 flex-grow"
-                  type="text"
-                  placeholder="0x..."
-                  value={destAddress}
-                  onChange={(e) => {
-                    setDestAddress(e.target.value);
-                  }}
-                />
-              </div>
-            </div>
-          </>
-        );
+      case ChainOptions.Polygon: return <w3m-button />;
+      case ChainOptions.Solana:  return <WalletMultiButton />;
+      case ChainOptions.Tron:    return null;
     }
   };
 
@@ -158,65 +84,72 @@ export default function Swap({ chain }: SwapParams) {
     );
   };
 
-  return (
-    <>
-      <div className="flex flex-col items-center">
-        <div>
-          <div className="flex flex-col border-2 rounded-3xl shadow-lg p-4">
-            <div className="flex justify-end mb-3">{connectButton()}</div>
+  const handleChainSelect = (c: ChainOptions) => {
+    setChain(c);
+    setDestAddress("");
+  };
 
-            <div className="bg-gray-100 rounded-3xl mb-2">
-              <div className="flex items-center justify-between mx-4">
-                <div className="mb-8 mt-6">
-                  <p className="text-gray-500">You buy</p>
-                  <input
-                    className="text-3xl bg-transparent placeholder-gray-300 w-20"
-                    placeholder="0.00"
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center justify-center rounded-full border-2 px-1 py-1 bg-gray-50 shadow-sm gap-2">
-                  {swapIcon()}
-                  <FaAngleDown className="w-6 h-6" />
-                </div>
+  return (
+    <div className="flex flex-col items-center px-5 pt-10">
+      <div className="w-full max-w-md">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-sm font-semibold text-ink">Swap</h1>
+          {connectButton()}
+        </div>
+
+        <Card>
+          <div className="flex flex-col gap-5">
+            <AmountInput
+              value={amount}
+              onChange={setAmount}
+              pill={<AssetPill chain={chain} onClick={() => setSheetOpen(true)} />}
+            />
+
+            <div className="flex items-center gap-3 px-4 py-3 bg-inset rounded-field">
+              <div className="w-8 h-8 rounded-full bg-walnut flex items-center justify-center">
+                <img className="w-5 h-5" alt="lightning" src="./ln.png" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-muted">Pay with</span>
+                <span className="text-sm font-semibold text-ink">Lightning BTC</span>
               </div>
             </div>
-            <div className="bg-gray-100 rounded-3xl mb-2">
-              <div className="flex items-center justify-between mx-4">
-                <div className="mb-8 mt-6">
-                  <p className="text-gray-500">You pay</p>
-                  <input
-                    className="text-3xl bg-transparent placeholder-gray-300 w-20"
-                    placeholder="0.00"
-                    type="number"
-                    value={amount}
-                    disabled={true}
-                  />
-                </div>
-                <div className="flex items-center justify-center rounded-full border-2 px-1 pr-2 py-1 bg-gray-50 shadow-sm gap-2">
-                  <img className="w-8 h-8" alt="xsgd logo" src="./ln.png" />
-                  <p className="text-sm">BTC(Lightning)</p>
-                  <FaAngleDown className="w-6 h-6" />
-                </div>
+
+            <ReceiveAddressField
+              chain={chain}
+              destAddress={destAddress}
+              setDestAddress={setDestAddress}
+            />
+
+            <div className="border-t border-border pt-3 flex flex-col gap-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted">Pay via</span>
+                <span className="text-ink font-medium">Lightning Network</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted">Receive on</span>
+                <span className="text-ink font-medium">{chainName()}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted">Est. settlement</span>
+                <span className="text-ink font-medium">~ 30 seconds</span>
               </div>
             </div>
-            {addressEl()}
 
             {data?.[accessor()]?.id ? (
-              <></>
+              <Order
+                orderId={data[accessor()].id}
+                preimage={preimage}
+                assetName={assetName()}
+                chainName={chainName()}
+              />
             ) : loading ? (
-              <div className="flex flex-col justify-center items-center">
-                <Loading></Loading>
+              <div className="flex justify-center py-4">
+                <Loading />
               </div>
             ) : (
-              <button
-                className={
-                  canCreateOrder()
-                    ? "p-4 rounded-full text-gray-100 bg-blue-500 shadow-sm active:bg-blue-200"
-                    : "border-2 p-4 border-gray-200 rounded-full text-gray-300"
-                }
+              <Button
+                disabled={!canCreateOrder()}
                 onClick={() => {
                   if (canCreateOrder()) {
                     createOrder({
@@ -229,22 +162,19 @@ export default function Swap({ chain }: SwapParams) {
                   }
                 }}
               >
-                Create Order
-              </button>
-            )}
-            {data?.[accessor()]?.id.length > 1 ? (
-              <Order
-                orderId={data?.[accessor()]?.id}
-                preimage={preimage}
-                assetName={assetName()}
-                chainName={chainName()}
-              ></Order>
-            ) : (
-              <></>
+                Create order
+              </Button>
             )}
           </div>
-        </div>
+        </Card>
       </div>
-    </>
+
+      <AssetSheet
+        open={sheetOpen}
+        selected={chain}
+        onSelect={handleChainSelect}
+        onClose={() => setSheetOpen(false)}
+      />
+    </div>
   );
 }

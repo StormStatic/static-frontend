@@ -24,6 +24,7 @@ const GET_SELL_ORDER = gql`
 const HOST = "https://dev-static-api.ap.ngrok.io";
 const STATIC_PREIMAGE_URI = `${HOST}/preimage`;
 const TWO_SEC_MS = 2000;
+
 export default function Order({
   orderId,
   preimage,
@@ -39,14 +40,12 @@ export default function Order({
     window.isSecureContext && navigator.clipboard;
 
   const writeToClipboard = async (d: any) => {
-    if (!hasWriteToClipboardPermission) {
-      return;
-    }
+    if (!hasWriteToClipboardPermission) return;
     await Clipboard.write({ string: d })
-      .then((result) => {
+      .then(() => {
         toast.success("Copied!", { duration: TWO_SEC_MS });
       })
-      .catch((reject) => {
+      .catch(() => {
         toast.success(d, { duration: TWO_SEC_MS });
       });
   };
@@ -69,7 +68,6 @@ export default function Order({
     };
 
     async function getWebln() {
-      console.log("get Webln");
       return await requestProvider();
     }
 
@@ -78,7 +76,6 @@ export default function Order({
       case "AwaitingPayment":
         getWebln()
           .then((webln) => {
-            console.log("webln supported " + webln);
             const invoice = data.sellOrder.metadata.invoice;
             return webln.sendPayment(invoice);
           })
@@ -112,7 +109,7 @@ export default function Order({
       case "DeployedContract":
         return `Escrow Created. Outgoing ${chainName} ${assetName} Locked in Escrow`;
       case "ReceivedPreimage":
-        return `Received Preimage from Frontend. Claimed Lightning funds. Releasing ${chainName} ${assetName} Funds...`;
+        return `Received Preimage. Releasing ${chainName} ${assetName} Funds...`;
       case "ReleasedFund":
         return `${assetName} successfully sent to destination address!`;
       default:
@@ -120,91 +117,84 @@ export default function Order({
     }
   };
 
+  const explorerUrl = (txHash: string) => {
+    switch (chainName) {
+      case "Polygon": return `https://polygonscan.com/tx/${txHash}`;
+      case "Solana":  return `https://solscan.io/tx/${txHash}`;
+      case "Tron":    return `https://tronscan.org/#/transaction/${txHash}`;
+      default:        return "#";
+    }
+  };
+
   return (
-    <>
-      <div className="flex flex-col justify-center items-center">
-        <div className="w-60 flex flex-col justify-center items-center">
-          {loading ? <Loading /> : <></>}
-          {error ? <p>{"Error:" + error.message}</p> : <></>}
-          {data?.sellOrder.status ? (
-            <p className="border-2 p-4 rounded-3xl bg-slate-600 text-slate-200 shadow-lg break-normal">
-              {mapStatus(data?.sellOrder.status)}
+    <div className="flex flex-col items-center gap-3">
+      {loading && <Loading />}
+      {error && <p className="text-xs text-danger">Error: {error.message}</p>}
+
+      {data?.sellOrder.status && (
+        <div className={`w-full text-center px-4 py-3 rounded-field text-sm font-medium ${
+          data.sellOrder.status === "ReleasedFund"
+            ? "bg-success/10 text-success"
+            : data.sellOrder.status === "Expired"
+            ? "bg-danger/10 text-danger"
+            : "bg-inset text-ink"
+        }`}>
+          {mapStatus(data.sellOrder.status)}
+        </div>
+      )}
+
+      {data?.sellOrder?.metadata.invoice &&
+        data?.sellOrder?.status === "AwaitingPayment" && (
+        <div className="flex flex-col items-center gap-2">
+          <div className="bg-surface rounded-field p-2 border border-border">
+            <QRCodeSVG
+              size={200}
+              value={data.sellOrder.metadata.invoice}
+              onClick={() => writeToClipboard(data.sellOrder.metadata.invoice)}
+              onTouchEnd={() => writeToClipboard(data.sellOrder.metadata.invoice)}
+            />
+          </div>
+          {!hasWriteToClipboardPermission && (
+            <p className="text-xs text-muted truncate w-48 text-center">
+              {data.sellOrder.metadata.invoice}
             </p>
-          ) : (
-            <></>
           )}
-          {data?.sellOrder?.metadata.invoice &&
-          data?.sellOrder?.status === "AwaitingPayment" ? (
-            <div className="flex flex-col justify-center items-center">
-              <QRCodeSVG
-                size={250}
-                includeMargin={true}
-                value={data?.sellOrder?.metadata.invoice}
-                onClick={() =>
-                  writeToClipboard(data?.sellOrder?.metadata.invoice)
-                }
-                onTouchEnd={() =>
-                  writeToClipboard(data?.sellOrder?.metadata.invoice)
-                }
-              />
-              {!hasWriteToClipboardPermission ? (
-                <p className="truncate w-48">
-                  {data?.sellOrder?.metadata.invoice}
-                </p>
-              ) : (
-                <></>
-              )}
+          <p className="text-xs text-muted">Tap QR code to copy invoice</p>
+        </div>
+      )}
+
+      {data?.sellOrder?.metadata.failureReason && (
+        <p className="text-xs text-danger">{data.sellOrder.metadata.failureReason}</p>
+      )}
+
+      {data?.sellOrder?.metadata.depositTx && (
+        <div className="w-full flex flex-col gap-1 text-xs">
+          <div className="flex justify-between">
+            <span className="text-muted">Deposit Txn</span>
+            <a
+              className="text-accent underline"
+              href={explorerUrl(data.sellOrder.metadata.depositTx)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View
+            </a>
+          </div>
+          {data.sellOrder.metadata.transactionHash && (
+            <div className="flex justify-between">
+              <span className="text-muted">Release Txn</span>
+              <a
+                className="text-accent underline"
+                href={explorerUrl(data.sellOrder.metadata.transactionHash)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                View
+              </a>
             </div>
-          ) : (
-            <></>
-          )}
-          {data?.sellOrder ? (
-            <>
-              <div className="text-sm break-normal text-red-500 mt-4">
-                <p>{data?.sellOrder.metadata.failureReason}</p>
-              </div>
-              {data?.sellOrder.metadata.depositTx ? (
-                <>
-                  <div className="flex text-md">
-                    <p>{"Deposit Txn: "}</p>
-                    <a
-                      className="text-blue underline ml-4"
-                      href={
-                        chainName === "Polygon"
-                          ? `https://polygonscan.com/tx/${data?.sellOrder.metadata.depositTx}`
-                          : `https://solscan.io/tx/${data?.sellOrder.metadata.depositTx}`
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      link
-                    </a>
-                  </div>
-                  <div className="flex text-md">
-                    <p>{"Release Txn: "}</p>
-                    <a
-                      className="text-blue underline ml-4"
-                      href={
-                        chainName === "Polygon"
-                          ? `https://polygonscan.com/tx/${data?.sellOrder.metadata.transactionHash}`
-                          : `https://solscan.io/tx/${data?.sellOrder.metadata.transactionHash}`
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      link
-                    </a>
-                  </div>
-                </>
-              ) : (
-                <></>
-              )}
-            </>
-          ) : (
-            <></>
           )}
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 }
