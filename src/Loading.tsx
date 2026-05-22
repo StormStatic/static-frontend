@@ -3,7 +3,7 @@ export default function Loading() {
     <div role="status">
       <svg
         aria-hidden="true"
-        className="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
+        className="w-6 h-6 text-border animate-spin fill-walnut"
         viewBox="0 0 100 101"
         fill="none"
       >
