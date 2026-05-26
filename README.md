@@ -1,6 +1,12 @@
 # static-frontend
 
-React + TypeScript frontend for the Static cross-chain swap app. Users sell stablecoins (XSGD on Polygon, USDC on Solana, USDT on Tron) and receive payment over the Lightning Network, using a hash-locked invoice to bind the on-chain transfer to the off-chain payment.
+React + TypeScript frontend for the Static cross-chain swap app. Users sell stablecoins and receive payment over the Lightning Network, using a hash-locked invoice to bind the on-chain transfer to the off-chain payment.
+
+| Chain   | Token | Address                                          |
+| ------- | ----- | ------------------------------------------------ |
+| Polygon | XSGD  | `0xdc3326e71d45186f113a2f448984ca0e8d201995`     |
+| Solana  | USDC  | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`   |
+| Tron    | USDT  | `TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t`             |
 
 Bootstrapped with Create React App and styled with Tailwind CSS.
 
