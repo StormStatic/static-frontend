@@ -8,15 +8,19 @@ React + TypeScript frontend for the Static cross-chain swap app. Users sell stab
 | Solana  | USDC  | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v`   |
 | Tron    | USDT  | `TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t`             |
 
+Polygon uses WalletConnect (via `@web3modal/ethers`) and Solana uses `@solana/wallet-adapter`. Tron is currently address-paste only — the user types a destination address; there is no Tron wallet integration in the UI.
+
 Bootstrapped with Create React App and styled with Tailwind CSS.
 
 ## Setup
 
 ```bash
 bun install
-npm start    # dev server on http://localhost:3000
-npm run build
-npm test
+bun start    # dev server on http://localhost:3000
+bun run build
+bun test
 ```
 
-Create a `.env` with `REACT_APP_WALLET_CONNECT_PROJECT_ID` (from https://cloud.walletconnect.com). The GraphQL endpoint is hard-coded in `src/App.tsx`.
+Create a `.env` with `REACT_APP_WALLET_CONNECT_PROJECT_ID` (from https://cloud.walletconnect.com).
+
+The GraphQL endpoint is set via the `HOST` constant in `src/App.tsx` (defaults to `https://dev-static-api.ap.ngrok.io`); edit it there to point at a different backend.
