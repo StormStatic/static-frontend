@@ -1,5 +1,6 @@
 import { gql, useQuery } from "@apollo/client";
 
+import Button from "./ui/Button";
 import { Clipboard } from "@capacitor/clipboard";
 import Loading from "./Loading";
 import { QRCodeSVG } from "qrcode.react";
@@ -24,6 +25,7 @@ const GET_SELL_ORDER = gql`
 const HOST = "https://dev-static-api.ap.ngrok.io";
 const STATIC_PREIMAGE_URI = `${HOST}/preimage`;
 const TWO_SEC_MS = 2000;
+
 export default function Order({
   orderId,
   preimage,
@@ -120,91 +122,99 @@ export default function Order({
     }
   };
 
+  const statusDotColor = () => {
+    if (!data?.sellOrder?.status) return "bg-muted";
+    switch (data.sellOrder.status) {
+      case "ReleasedFund":
+        return "bg-success";
+      case "Expired":
+        return "bg-danger";
+      default:
+        return "bg-accent";
+    }
+  };
+
   return (
-    <>
-      <div className="flex flex-col justify-center items-center">
-        <div className="w-60 flex flex-col justify-center items-center">
-          {loading ? <Loading /> : <></>}
-          {error ? <p>{"Error:" + error.message}</p> : <></>}
-          {data?.sellOrder.status ? (
-            <p className="border-2 p-4 rounded-3xl bg-slate-600 text-slate-200 shadow-lg break-normal">
-              {mapStatus(data?.sellOrder.status)}
-            </p>
-          ) : (
-            <></>
-          )}
-          {data?.sellOrder?.metadata.invoice &&
-          data?.sellOrder?.status === "AwaitingPayment" ? (
-            <div className="flex flex-col justify-center items-center">
-              <QRCodeSVG
-                size={250}
-                includeMargin={true}
-                value={data?.sellOrder?.metadata.invoice}
-                onClick={() =>
-                  writeToClipboard(data?.sellOrder?.metadata.invoice)
-                }
-                onTouchEnd={() =>
-                  writeToClipboard(data?.sellOrder?.metadata.invoice)
-                }
-              />
-              {!hasWriteToClipboardPermission ? (
-                <p className="truncate w-48">
-                  {data?.sellOrder?.metadata.invoice}
-                </p>
-              ) : (
-                <></>
-              )}
-            </div>
-          ) : (
-            <></>
-          )}
-          {data?.sellOrder ? (
-            <>
-              <div className="text-sm break-normal text-red-500 mt-4">
-                <p>{data?.sellOrder.metadata.failureReason}</p>
-              </div>
-              {data?.sellOrder.metadata.depositTx ? (
-                <>
-                  <div className="flex text-md">
-                    <p>{"Deposit Txn: "}</p>
-                    <a
-                      className="text-blue underline ml-4"
-                      href={
-                        chainName === "Polygon"
-                          ? `https://polygonscan.com/tx/${data?.sellOrder.metadata.depositTx}`
-                          : `https://solscan.io/tx/${data?.sellOrder.metadata.depositTx}`
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      link
-                    </a>
-                  </div>
-                  <div className="flex text-md">
-                    <p>{"Release Txn: "}</p>
-                    <a
-                      className="text-blue underline ml-4"
-                      href={
-                        chainName === "Polygon"
-                          ? `https://polygonscan.com/tx/${data?.sellOrder.metadata.transactionHash}`
-                          : `https://solscan.io/tx/${data?.sellOrder.metadata.transactionHash}`
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      link
-                    </a>
-                  </div>
-                </>
-              ) : (
-                <></>
-              )}
-            </>
-          ) : (
-            <></>
-          )}
+    <div className="flex flex-col gap-4 mt-2">
+      {loading && (
+        <div className="flex justify-center">
+          <Loading />
         </div>
-      </div>
-    </>
+      )}
+      {error && <p className="text-sm text-danger">{"Error: " + error.message}</p>}
+      {data?.sellOrder.status && (
+        <div className="bg-surface border border-border rounded-field p-4 flex items-start gap-3">
+          <span className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${statusDotColor()}`} />
+          <p className="text-sm text-ink break-words">
+            {mapStatus(data.sellOrder.status)}
+          </p>
+        </div>
+      )}
+      {data?.sellOrder?.metadata.invoice &&
+      data?.sellOrder?.status === "AwaitingPayment" && (
+        <div className="flex flex-col items-center gap-4">
+          <div className="bg-inset rounded-card p-4">
+            <QRCodeSVG
+              size={220}
+              includeMargin={true}
+              value={data.sellOrder.metadata.invoice}
+              onClick={() => writeToClipboard(data.sellOrder.metadata.invoice)}
+              onTouchEnd={() => writeToClipboard(data.sellOrder.metadata.invoice)}
+            />
+          </div>
+          {!hasWriteToClipboardPermission && (
+            <p className="truncate w-48 text-xs text-muted">
+              {data.sellOrder.metadata.invoice}
+            </p>
+          )}
+          <Button
+            onClick={() => writeToClipboard(data.sellOrder.metadata.invoice)}
+          >
+            Copy invoice
+          </Button>
+        </div>
+      )}
+      {data?.sellOrder && (
+        <>
+          {data.sellOrder.metadata.failureReason && (
+            <p className="text-sm text-danger">{data.sellOrder.metadata.failureReason}</p>
+          )}
+          {data.sellOrder.metadata.depositTx && (
+            <div className="flex flex-col gap-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted">Deposit Txn</span>
+                <a
+                  className="text-walnut underline"
+                  href={
+                    chainName === "Polygon"
+                      ? `https://polygonscan.com/tx/${data.sellOrder.metadata.depositTx}`
+                      : `https://solscan.io/tx/${data.sellOrder.metadata.depositTx}`
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  link
+                </a>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted">Release Txn</span>
+                <a
+                  className="text-walnut underline"
+                  href={
+                    chainName === "Polygon"
+                      ? `https://polygonscan.com/tx/${data.sellOrder.metadata.transactionHash}`
+                      : `https://solscan.io/tx/${data.sellOrder.metadata.transactionHash}`
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  link
+                </a>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }
