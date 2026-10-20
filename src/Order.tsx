@@ -21,7 +21,8 @@ const GET_SELL_ORDER = gql`
   }
 `;
 
-const HOST = "https://dev-static-api.ap.ngrok.io";
+const HOST =
+  process.env.REACT_APP_STATIC_API_HOST || "https://dev-static-api.ap.ngrok.io";
 const STATIC_PREIMAGE_URI = `${HOST}/preimage`;
 const TWO_SEC_MS = 2000;
 export default function Order({

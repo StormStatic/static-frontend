@@ -19,4 +19,4 @@ npm run build
 npm test
 ```
 
-Create a `.env` with `REACT_APP_WALLET_CONNECT_PROJECT_ID` (from https://cloud.walletconnect.com). The GraphQL endpoint is hard-coded in `src/App.tsx`.
+Create a `.env` with `REACT_APP_WALLET_CONNECT_PROJECT_ID` (from https://cloud.walletconnect.com). The GraphQL API host defaults to the dev tunnel and can be overridden with `REACT_APP_STATIC_API_HOST` (e.g. `http://localhost:8911`).
