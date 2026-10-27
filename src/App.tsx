@@ -5,7 +5,9 @@ import Chain from "./Chain";
 import { Toaster } from "react-hot-toast";
 
 // 1. Get projectId at https://cloud.walletconnect.com
-const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID as string;
+const projectId =
+  (process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID as string) ||
+  "deadbeefdeadbeefdeadbeefdeadbeef";
 
 // 2. Set chains
 const polygon = {
@@ -24,11 +26,18 @@ const metadata = {
   icons: ["https://avatars.mywebsite.com/"],
 };
 
-createWeb3Modal({
-  ethersConfig: defaultConfig({ metadata }),
-  chains: [polygon],
-  projectId,
-});
+try {
+  createWeb3Modal({
+    ethersConfig: defaultConfig({ metadata }),
+    chains: [polygon],
+    projectId,
+  });
+} catch (e) {
+  // Without a valid WalletConnect project id, Web3Modal would otherwise
+  // throw at import time and crash the whole app, including chains that
+  // don't need a wallet connection.
+  console.warn("Web3Modal failed to initialize; wallet connect is unavailable.", e);
+}
 
 const HOST =
   process.env.REACT_APP_STATIC_API_HOST || "https://dev-static-api.ap.ngrok.io";
