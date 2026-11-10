@@ -24,11 +24,16 @@ const metadata = {
   icons: ["https://avatars.mywebsite.com/"],
 };
 
-createWeb3Modal({
-  ethersConfig: defaultConfig({ metadata }),
-  chains: [polygon],
-  projectId,
-});
+// Web3Modal's constructor throws synchronously when projectId is falsy,
+// which would otherwise crash the whole app (including chains that never
+// use WalletConnect) before anything renders.
+if (projectId) {
+  createWeb3Modal({
+    ethersConfig: defaultConfig({ metadata }),
+    chains: [polygon],
+    projectId,
+  });
+}
 
 const HOST =
   process.env.REACT_APP_STATIC_API_HOST || "https://dev-static-api.ap.ngrok.io";
